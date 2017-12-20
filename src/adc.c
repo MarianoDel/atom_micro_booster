@@ -101,8 +101,8 @@ void AdcConfig (void)
 	//set pointer
 	p_channel = &adc_ch[0];
 
-	NVIC_EnableIRQ(ADC1_COMP_IRQn);
-	NVIC_SetPriority(ADC1_COMP_IRQn, 3);
+	NVIC_EnableIRQ(ADC1_IRQn);
+	NVIC_SetPriority(ADC1_IRQn, 3);
 #endif
 
 #ifdef ADC_WITH_TEMP_SENSE

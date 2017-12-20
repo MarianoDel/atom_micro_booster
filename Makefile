@@ -50,7 +50,7 @@ DLIBS =
 
 #
 # Define project name and Ram = 0/Flash = 1 mode here
-PROJECT        = Template_F050
+PROJECT        = Template_F030
 
 # List all user C define here, like -D_DEBUG=1
 UDEFS =
@@ -102,54 +102,24 @@ SRC += $(DEVDIR)/syscalls/syscalls.c
 # SRC += $(STMSPSRCDDIR)/stm32f0xx_tim.c
 # SRC += $(STMSPSRCDDIR)/stm32f0xx_usart.c
 #SRC += $(STMSPSRCDDIR)/stm32f0xx_wwdg.c
-SRC += ./src/stm32f0xx_it.c
+SRC += ./src/adc.c
+SRC += ./src/dsp.c
+SRC += ./src/flash_program.c
 SRC += ./src/gpio.c
+SRC += ./src/hard.c
+SRC += ./src/stm32f0xx_it.c
 SRC += ./src/tim.c
 # SRC += ./src/spi.c
-SRC += ./src/adc.c
 SRC += ./src/uart.c
-SRC += ./src/flash_program.c
-SRC += ./src/dsp.c
-SRC += ./src/hard.c
-# SRC += ./src/synchro.c
-SRC += ./src/tcp_transceiver.c
-# SRC += ./src/programs_functions.c
-## System Support
-#SRC += ./cmsis_boot/system_stm32f0xx.c
-#SRC += $(DISCOVERY)/stm32f0_discovery.c
-#SRC += ./src/Sim900.c
+
+
+
+
 ## Core Support
-#SRC += ./startup_src/syscalls.c
 SRC += $(CORELIBDIR)/core_cm0.c
-## used parts of the STM-Library
 
-## MQTT libraries
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTConnectClient.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTConnectServer.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTDeserializePublish.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTFormat.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTPacket.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTSerializePublish.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTSubscribeClient.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTSubscribeServer.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTUnsubscribeClient.c
-SRC += ./paho.mqtt.embedded-c/MQTTPacket/src/MQTTUnsubscribeServer.c
-
-## GPS libraries
-SRC += ./src/gps_vktel.c
-
-## used part of GSM_Library
-#SRC += $(DLIBDIR)/src/at_parser.c
-#SRC += $(DLIBDIR)/src/at_timer.c
-#SRC += $(DLIBDIR)/src/gsm_adapter.c
-#SRC += $(DLIBDIR)/src/gsm_engine.c
-#SRC += $(DLIBDIR)/src/gsm_hal.c
 
 ## Other Peripherals libraries
-SRC += ./src/ESP8266.c
-#SRC += ./src/HLK_RM04.c
-SRC += ./src/sim900_800.c
-SRC += ./src/funcs_gsm.c
 
 # List ASM source files here
 ASRC = ./cmsis_boot/startup/startup_stm32f0xx.s

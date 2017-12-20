@@ -11,133 +11,64 @@
 
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
-// #define VER_1_0
-#define VER_1_1		//mismo pinout que VER_1_0
+#define VER_1_0
+// #define VER_1_1		//mismo pinout que VER_1_0
 
 //-------- Type of Program ----------------
-//#define USE_GPS
-// #define USE_GSM_GATEWAY
-//OJO --- los dos que siguen van juntos
-#define USE_GSM
-#define USE_REDONDA_BASIC
-//OJO --- los dos que siguen van juntos
-// #define USE_GSM
-// #define USE_ONLY_POWER_SENSE
-
-
-//#define WIFI_TO_MQTT_BROKER
-//#define USE_CERT_PROGRAM
-//#define USE_PROD_PROGRAM
 // #define DEBUG_ON
 
-#if (defined USE_REDONDA_BASIC) || (defined USE_ONLY_POWER_SENSE)
-//-------- Voltage Conf ------------------------
-#define VOLTAGE_PHOTO_OFF	3322
-#define VOLTAGE_PHOTO_ON	3722
 
 //-------- Type of Program and Features ----------------
-// #define WITH_1_TO_10_VOLTS
-#define WITH_HYST
-// #define WITH_TEMP_CONTROL
-// #define USE_WITH_SYNC				//usa circuito sync por flanco (modificacion en Hardware)
 
 //-------- Kind of Reports Sended ----------------
-#define REPORTS_NORMAL_MODE
-// #define REPORTS_AIRPLANE_MODE
 
 //-------- Others Configurations depending on the formers ------------
 //-------- Hysteresis Conf ------------------------
-#ifdef WITH_HYST
-#define HYST_MAX	400
-#define HYST_2		340
-#define HYST_4		240
-#define HYST_6		140
-#define HYST_MIN	40
-#endif
 
 //-------- PWM Conf ------------------------
-#define PWM_MAX	255
-#define PWM_80		204
-#define PWM_60		153
-#define PWM_40		102
-#define PWM_20		52
-#define PWM_MIN	26
-
-#endif	//USE_REDONDA_BASIC
 
 //-------- End Of Defines For Configuration ------
 
 #if (defined VER_1_0 || defined VER_1_1)
-#ifdef USE_WITH_SYNC
-//GPIOA pin0	lo uso como SYNC
-#define SYNC ((GPIOA->IDR & 0x0001) != 0)
-#else
-//GPIOA pin0	V_Sense
-#endif
-//GPIOA pin0	V_Sense
-//GPIOA pin1	Light_Sense
-#define LIGHT ((GPIOA->IDR & 0x0002) != 0)
+//GPIOA pin0	Vin_Sense
+//GPIOA pin1	Vout_Sense
+//GPIOA pin2	I_Sense
 
-//GPIOA pin2
-//GPIOA pin3	usart2 tx rx (para debug)
-#define PIN3_ON	GPIOA->BSRR = 0x00000008
-#define PIN3_OFF GPIOA->BSRR = 0x00080000
+//GPIOA pin3	NC
+//GPIOA pin4	NC
+//GPIOA pin5	NC
 
+//GPIOA pin6	para TIM3_CH1
+//GPIOA pin7	NC
 
-//GPIOA pin4
-#define NETLIGHT	((GPIOA->IDR & 0x0010) != 0)
+//GPIOB pin0
+#define OVERCURRENT	((GPIOB->IDR & 0x0001) == 0)
 
-//GPIOA pin5
-#define STATUS		((GPIOA->IDR & 0x0020) != 0)
+//GPIOB pin1	TIM14_CH1 o TIM3_CH4
 
-//GPIOA pin6	para PWM_CH1
-
-//GPIOA pin7
-#define PWRKEY ((GPIOA->ODR & 0x0080) != 0)
-#define PWRKEY_ON	GPIOA->BSRR = 0x00000080
-#define PWRKEY_OFF GPIOA->BSRR = 0x00800000
-
-//GPIOB pin0 I_Sense
-
-//GPIOB pin1
-
-//GPIOA pin8
+//GPIOA pin8	para TIM1_CH1
 
 //GPIOA pin9
-//GPIOA pin10	usart1 tx rx (para el SIM)
+//GPIOA pin10	usart1 tx rx
 
-//GPIOA pin11
-#define RELAY ((GPIOA->ODR & 0x0800) != 0)
-#define RELAY_ON	GPIOA->BSRR = 0x00000800
-#define RELAY_OFF GPIOA->BSRR = 0x08000000
-
-//GPIOA pin12
-#define LED ((GPIOA->ODR & 0x1000) != 0)
-#define LED_ON	GPIOA->BSRR = 0x00001000
-#define LED_OFF GPIOA->BSRR = 0x10000000
-
-//GPIOA pin13
-//GPIOA pin14
+//GPIOA pin11	NC
+//GPIOA pin12	NC
+//GPIOA pin13	NC
+//GPIOA pin14	NC
 
 //GPIOA pin15
-#define EN_GPS 		((GPIOA->ODR & 0x8000) != 0)
-#define EN_GPS_ON		GPIOA->BSRR = 0x00008000
-#define EN_GPS_OFF	GPIOA->BSRR = 0x80000000
-#ifndef USE_GPS
-#define SYNCP			EN_GPS
-#define SYNCP_ON		EN_GPS_ON
-#define SYNCP_OFF		EN_GPS_OFF
-#endif
+#define LED ((GPIOA->ODR & 0x8000) != 0)
+#define LED_ON	GPIOA->BSRR = 0x00008000
+#define LED_OFF GPIOA->BSRR = 0x80000000
 
-//GPIOB pin3
-#define PPS ((GPIOB->IDR & 0x0008) == 0)
-
-//GPIOB pin4
-//GPIOB pin5
+//GPIOB pin3	NC
+//GPIOB pin4	NC
+//GPIOB pin5	NC
 
 //GPIOB pin6
-//GPIOB pin7	usart1 tx rx (para el GPS)
+#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
 
+//GPIOB pin7	NC
 #endif	//
 
 
@@ -186,8 +117,7 @@ typedef enum {
 } wifi_state_t;
 #endif
 
-//ESTADOS DEL PROGRAMA PRINCIPAL USE_REDONDA_BASIC
-#if defined USE_REDONDA_BASIC || defined USE_ONLY_POWER_SENSE
+//ESTADOS DEL PROGRAMA PRINCIPAL
 typedef enum
 {
 	MAIN_INIT = 0,
@@ -218,7 +148,6 @@ typedef enum
 
 } lamp_on_state_t;
 
-#endif
 
 #define SIZEOF_DATA1	512
 #define SIZEOF_DATA		256
@@ -275,12 +204,6 @@ enum Relay_State {
 
 
 /* Module Functions ------------------------------------------------------------*/
-void RelayOn (void);
-void RelayOff (void);
-void RelayOffFast (void);
-void UpdateRelay (void);
-unsigned char RelayIsOn (void);
-unsigned char RelayIsOff (void);
 unsigned short GetHysteresis (unsigned char);
 unsigned char GetNew1to10 (unsigned short);
 void UpdateVGrid (void);

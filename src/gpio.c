@@ -66,32 +66,19 @@ void GPIO_Config (void)
 	if (!GPIOA_CLK)
 		GPIOA_CLK_ON;
 
-#ifdef USE_WITH_SYNC
 	temp = GPIOA->MODER;	//2 bits por pin
-	temp &= 0x3C030000;		//PA0 input SYNC; PA1 analog input; PA2 - PA3 alternate function; PA4 - PA5 input; PA6 alternate function; PA7 out open drain;
-									//PA15 output
-	temp |= 0x416860AC;
+	temp &= 0x3FC0CFC0;		//PA0 PA1 PA2 analog input; PA6 alternate function;
+									//PA8 PA9 PA10 alternative function; PA15 out
+	temp |= 0x402A203F;
 	GPIOA->MODER = temp;
-#else
-	temp = GPIOA->MODER;	//2 bits por pin
-	temp &= 0x3C030000;		//PA0 - PA1 analog input; PA2 - PA3 alternate function; PA4 - PA5 input; PA6 alternate function; PA7 out open drain;
-	//	temp |= 0x416860AF;		//PA9 PA10 alternative; PA11 PA12 PA15 out open drain
-	//	temp |= 0x4168606F;		//pruebo pin3
-	temp |= 0x416860A3;		//PA1 input para pruebas
-	GPIOA->MODER = temp;
-#endif
 
 	temp = GPIOA->OTYPER;	//1 bit por pin
-	temp &= 0xFFFF7F7F;
-#ifndef USE_GPS
-	temp |= 0x00000080;		//PA7 open drain
-#else
-	temp |= 0x00008080;		//PA15 y PA7 open drain
-#endif
+	temp &= 0xFFFFFFFF;
+	temp |= 0x00000000;
 	GPIOA->OTYPER = temp;
 
 	temp = GPIOA->OSPEEDR;	//2 bits por pin
-	temp &= 0x3C030F0F;
+	temp &= 0x3FC03FFF;
 	temp |= 0x00000000;		//low speed
 	GPIOA->OSPEEDR = temp;
 
@@ -109,8 +96,8 @@ void GPIO_Config (void)
 		GPIOB_CLK_ON;
 
 	temp = GPIOB->MODER;	//2 bits por pin
-	temp &= 0xFFFF0F3C;		//PB0 analog input; PB3 input PB6 PB7 alternative
-	temp |= 0x0000A003;
+	temp &= 0xFFFFCFF0;		//PB0 input; PB1 alternative; PB6 input
+	temp |= 0x00000008;
 	GPIOB->MODER = temp;
 
 	temp = GPIOB->OTYPER;	//1 bit por pin
@@ -119,13 +106,13 @@ void GPIO_Config (void)
 	GPIOB->OTYPER = temp;
 
 	temp = GPIOB->OSPEEDR;	//2 bits por pin
-	temp &= 0xFFFF0FFF;
+	temp &= 0xFFFFFFFF;
 	temp |= 0x00000000;		//low speed
 	GPIOB->OSPEEDR = temp;
 
 	temp = GPIOB->PUPDR;	//2 bits por pin
-	temp &= 0xFFFFFFFF;
-	temp |= 0x00000000;
+	temp &= 0xFFFFCFFC;		//PB0 PB6 pull up
+	temp |= 0x00001001;
 	GPIOB->PUPDR = temp;
 
 	//Alternate Fuction for GPIOB

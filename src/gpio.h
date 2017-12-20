@@ -14,8 +14,8 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __STM32F0X_GPIO_H
-#define __STM32F0X_GPIO_H
+#ifndef __GPIO_H
+#define __GPIO_H
 
 //#include "stm32f0xx.h"
 
