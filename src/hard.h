@@ -33,6 +33,10 @@
 //GPIOA pin0	Vin_Sense
 //GPIOA pin1	Vout_Sense
 //GPIOA pin2	I_Sense
+//GPIOA pin2	para pruebas
+#define ISENSE_ON	GPIOA->BSRR = 0x00000004
+#define ISENSE_OFF GPIOA->BSRR = 0x00040000
+
 
 //GPIOA pin3	NC
 //GPIOA pin4	NC
@@ -47,6 +51,9 @@
 //GPIOB pin1	TIM14_CH1 o TIM3_CH4
 
 //GPIOA pin8	para TIM1_CH1
+// #define CTRL_M_B_ON	GPIOA->BSRR = 0x00000100
+// #define CTRL_M_B_OFF GPIOA->BSRR = 0x01000000
+
 
 //GPIOA pin9
 //GPIOA pin10	usart1 tx rx

@@ -76,7 +76,7 @@ void AdcConfig (void)
 	ADC1->CFGR2 = ADC_ClockMode_SynClkDiv4;
 
 	//set resolution, trigger & Continuos or Discontinuous
-	ADC1->CFGR1 |= ADC_Resolution_12b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T3_TRGO;	//recordar ADC1->CR |= ADC_CR_ADSTART
+	ADC1->CFGR1 |= ADC_Resolution_10b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T3_TRGO;	//recordar ADC1->CR |= ADC_CR_ADSTART
 	//ADC1->CFGR1 |= ADC_Resolution_12b | ADC_ExternalTrigConvEdge_Rising | ADC_ExternalTrigConv_T1_TRGO;
 	//ADC1->CFGR1 |= ADC_Resolution_12b | ADC_CFGR1_DISCEN;
 	// ADC1->CFGR1 |= ADC_Resolution_12b;
@@ -93,7 +93,7 @@ void AdcConfig (void)
 
 #ifdef ADC_WITH_INT
 	//set channel selection
-	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_8;
+	ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_2;
 
 	//set interrupts
 	ADC1->IER |= ADC_IT_EOC;
@@ -121,7 +121,7 @@ void ADC1_COMP_IRQHandler (void)
 {
 	if (ADC1->ISR & ADC_IT_EOC)
 	{
-		if (ADC1->ISR & ADC_IT_EOSEQ)	//seguro que es channel8 en posicion 3
+		if (ADC1->ISR & ADC_IT_EOSEQ)	//seguro que es channel3 en posicion 3
 		{
 			p_channel = &adc_ch[2];
 			*p_channel = ADC1->DR;
@@ -296,55 +296,55 @@ short ConvertTemp (unsigned short adc_temp)
 }
 #endif //ADC_WITH_TEMP_SENSE
 
-void UpdatePhotoTransistor(void)
-{
-	//hago update cada 1 seg
-	if (!tt_take_photo_sample)
-	{
-		tt_take_photo_sample = 1000;
-
-		// VoltagePhoto [photo_index] = ReadADC1_SameSampleTime(ADC_CH1);
-		VoltagePhoto [photo_index] = Light_Sense;
-
-		if (photo_index < (SIZEOF_PHOTO_TRANS - 1))
-			photo_index++;
-		else
-			photo_index = 0;
-
-		new_photo_sample = 1;
-	}
-}
-
-void FillPhotoBuffer (void)
-{
-	unsigned char i;
-	unsigned short dummy;
-
-	// dummy = ReadADC1_SameSampleTime(ADC_CH1);
-	dummy = Light_Sense;
-
-	for (i = 0; i < SIZEOF_PHOTO_TRANS; i++)
-		 VoltagePhoto[i] = dummy;
-
-}
-
-//devuelve el valor promedio del PhotoTransistor
-//si existen nuevas muestras hace la cuenta, sino contesta el ultimo valor calculado
-unsigned short GetPhoto (void)
-{
-    unsigned char i;
-    unsigned int t = 0;
-
-    if (new_photo_sample)
-    {
-        for (i = 0; i < SIZEOF_PHOTO_TRANS; i++)
-        {
-            t += VoltagePhoto[i];
-        }
-
-        last_photo = t >> DIVISOR_PHOTO;
-        new_photo_sample = 0;
-    }
-
-    return last_photo;
-}
+// void UpdatePhotoTransistor(void)
+// {
+// 	//hago update cada 1 seg
+// 	if (!tt_take_photo_sample)
+// 	{
+// 		tt_take_photo_sample = 1000;
+//
+// 		// VoltagePhoto [photo_index] = ReadADC1_SameSampleTime(ADC_CH1);
+// 		VoltagePhoto [photo_index] = Light_Sense;
+//
+// 		if (photo_index < (SIZEOF_PHOTO_TRANS - 1))
+// 			photo_index++;
+// 		else
+// 			photo_index = 0;
+//
+// 		new_photo_sample = 1;
+// 	}
+// }
+//
+// void FillPhotoBuffer (void)
+// {
+// 	unsigned char i;
+// 	unsigned short dummy;
+//
+// 	// dummy = ReadADC1_SameSampleTime(ADC_CH1);
+// 	dummy = Light_Sense;
+//
+// 	for (i = 0; i < SIZEOF_PHOTO_TRANS; i++)
+// 		 VoltagePhoto[i] = dummy;
+//
+// }
+//
+// //devuelve el valor promedio del PhotoTransistor
+// //si existen nuevas muestras hace la cuenta, sino contesta el ultimo valor calculado
+// unsigned short GetPhoto (void)
+// {
+//     unsigned char i;
+//     unsigned int t = 0;
+//
+//     if (new_photo_sample)
+//     {
+//         for (i = 0; i < SIZEOF_PHOTO_TRANS; i++)
+//         {
+//             t += VoltagePhoto[i];
+//         }
+//
+//         last_photo = t >> DIVISOR_PHOTO;
+//         new_photo_sample = 0;
+//     }
+//
+//     return last_photo;
+// }

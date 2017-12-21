@@ -92,9 +92,21 @@ void USART1_IRQHandler(void)
 
 		if (prx1 < &rx1buff[SIZEOF_DATA])
 		{
-			*prx1 = dummy;
-			prx1++;
-			usart1_have_data = 1;
+			if ((dummy == '\n') || (dummy == '\r') || (dummy == 26))		//26 es CTRL-Z
+			{
+				*prx1 = '\0';
+				usart1_have_data = 1;
+				if (LED)
+					LED_OFF;
+				else
+					LED_ON;
+
+			}
+			else
+			{
+				*prx1 = dummy;
+				prx1++;
+			}
 		}
 	}
 
@@ -166,6 +178,11 @@ void USART1Config(void)
 //	USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
 //	USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
 	USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;	//para pruebas TX
+
+	temp = GPIOA->AFR[1];
+	temp &= 0xFFFFF00F;
+	temp |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
+	GPIOA->AFR[1] = temp;
 
 	NVIC_EnableIRQ(USART1_IRQn);
 	NVIC_SetPriority(USART1_IRQn, 5);
