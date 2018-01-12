@@ -37,7 +37,7 @@ void UpdateTIMSync (unsigned short a)
 {
     //primero cargo TIM1
     TIM1->CCR1 = a;
-    TIM3->ARR = 512 + a;    //TIM3->CCR1 es el delay entre timers
+    TIM3->ARR = DUTY_50_PERCENT + a;    //TIM3->CCR1 es el delay entre timers
 }
 
 void Update_TIM3_CH1 (unsigned short a)
@@ -79,81 +79,84 @@ void Wait_ms (unsigned short wait)
 //------------------------------------------//
 void TIM_1_Init (void)
 {
-    unsigned int temp = 0;
+	unsigned int temp = 0;
 
-    if (!RCC_TIM1_CLK)
-        RCC_TIM1_CLK_ON;
+	if (!RCC_TIM1_CLK)
+	  RCC_TIM1_CLK_ON;
 
-    //Configuracion del timer.
-    //TIM1->CR1 |= TIM_CR1_OPM;        //clk int / 1; upcounting; one pulse
-    TIM1->CR1 = 0x00;        //clk int / 1;
-    TIM1->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
-    //TIM1->CR2 = 0x00;
-    //TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
-    TIM1->SMCR = 0x0000;
-    //TIM1->CCMR1 = 0x6000;            //CH2 output PWM mode 1
-    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1
-    TIM1->CCMR2 = 0x0000;
-   //  TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;
- 	TIM1->CCER |= TIM_CCER_CC1E;
-    TIM1->BDTR |= TIM_BDTR_MOE;
-    TIM1->ARR = 1023;                //cada tick 20.83ns
+	//Configuracion del timer.
+	//TIM1->CR1 |= TIM_CR1_OPM;        //clk int / 1; upcounting; one pulse
+	TIM1->CR1 = 0x00;        //clk int / 1;
+	TIM1->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
+	//TIM1->CR2 = 0x00;
+	//TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
+	TIM1->SMCR = 0x0000;
+	//TIM1->CCMR1 = 0x6000;            //CH2 output PWM mode 1
+	TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
+	TIM1->CCMR2 = 0x0000;
+	//  TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;
+	TIM1->CCER |= TIM_CCER_CC1E;
+	TIM1->BDTR |= TIM_BDTR_MOE;
+	// TIM1->ARR = 1023;                //cada tick 20.83ns
+	TIM1->ARR = DUTY_100_PERCENT;                //cada tick 20.83ns
 
-    TIM1->CNT = 0;
-    TIM1->PSC = 0;
 
-    //Configuracion Pines
-    //Alternate Fuction
-   //  temp = GPIOA->MODER;    //2 bits por pin
-   //  temp &= 0xFFFCFFFF;        //PA8 (alternative)
-   //  temp |= 0x00020000;
-   //  GPIOA->MODER = temp;
+	TIM1->CNT = 0;
+	TIM1->PSC = 0;
 
-	 temp = GPIOA->AFR[1];
-	 temp &= 0xFFFFFFF0;
-	 temp |= 0x00000002;    //PA8 -> AF2
-    GPIOA->AFR[1] = temp;
+	//Configuracion Pines
+	//Alternate Fuction
+	//  temp = GPIOA->MODER;    //2 bits por pin
+	//  temp &= 0xFFFCFFFF;        //PA8 (alternative)
+	//  temp |= 0x00020000;
+	//  GPIOA->MODER = temp;
 
-    // Enable timer ver UDIS
-    //TIM1->DIER |= TIM_DIER_UIE;
-    TIM1->CR1 |= TIM_CR1_CEN;
+	temp = GPIOA->AFR[1];
+	temp &= 0xFFFFFFF0;
+	temp |= 0x00000002;    //PA8 -> AF2
+	GPIOA->AFR[1] = temp;
 
-    TIM1->CCR1 = 0;
+	// Enable timer ver UDIS
+	//TIM1->DIER |= TIM_DIER_UIE;
+	TIM1->CR1 |= TIM_CR1_CEN;
+
+	TIM1->CCR1 = 0;
 }
 
 void TIM_3_Init (void)
 {
-    //NVIC_InitTypeDef NVIC_InitStructure;
-    unsigned int temp = 0;
+	unsigned int temp = 0;
 
-    if (!RCC_TIM3_CLK)
-        RCC_TIM3_CLK_ON;
+	if (!RCC_TIM3_CLK)
+	  RCC_TIM3_CLK_ON;
 
-    //Configuracion del timer.
-    TIM3->CR1 |= TIM_CR1_OPM;        //clk int / 1; upcounting; one pulse
-    //TIM3->CR1 = 0x0000;        //clk int / 1; upcounting;
-    //TIM3->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
-    TIM3->CR2 = 0x0000;
-    //TIM3->SMCR |= TIM_SMCR_SMS_2 |TIM_SMCR_SMS_1 | TIM_SMCR_TS_1 | TIM_SMCR_TS_0;    //reset mode
-    //TIM3->SMCR |= TIM_SMCR_SMS_2;    //reset mode link timer1    OJO no anda
-    TIM3->SMCR |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;    //trigger mode link timer1
-    //TIM3->SMCR = 0x0000;    //
-    //TIM3->CCMR1 = 0x6000;            //CH2 output PWM mode 1
-    TIM3->CCMR1 = 0x0060;            //CH1 output PWM mode 1
-    TIM3->CCMR2 = 0x6000;            //CH4 enable PWM 2
-    TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P | TIM_CCER_CC4E;    //CH1 enable on pin active high
-    //TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
-    TIM3->ARR = 512 + 0;    //freq 46.8KHz
-    TIM3->CNT = 0;
-    TIM3->PSC = 0;
-    //TIM3->EGR = TIM_EGR_UG;    //generate event
+	//Configuracion del timer.
+	TIM3->CR1 |= TIM_CR1_OPM;        //clk int / 1; upcounting; one pulse
+	//TIM3->CR1 = 0x0000;        //clk int / 1; upcounting;
+	//TIM3->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
+	TIM3->CR2 = 0x0000;
+	//TIM3->SMCR |= TIM_SMCR_SMS_2 |TIM_SMCR_SMS_1 | TIM_SMCR_TS_1 | TIM_SMCR_TS_0;    //reset mode
+	//TIM3->SMCR |= TIM_SMCR_SMS_2;    //reset mode link timer1    OJO no anda
+	TIM3->SMCR |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;    //trigger mode link timer1
+	//TIM3->SMCR = 0x0000;    //
+	//TIM3->CCMR1 = 0x6000;            //CH2 output PWM mode 1
+	//  TIM3->CCMR1 = 0x0060;            //CH1 output PWM mode 1
+	TIM3->CCMR1 = 0x0070;            //CH1 output PWM mode 2 (channel inactive TIM3->CNT < TIM3->CCR1)
+	TIM3->CCMR2 = 0x0000;            //
+	//  TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;    //CH1 enable on pin active high
+	TIM3->CCER |= TIM_CCER_CC1E;    //CH1 enable on pin active high
+	//TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
+	TIM3->ARR = DUTY_50_PERCENT;
+	TIM3->CNT = 0;
+	TIM3->PSC = 0;
+	//TIM3->EGR = TIM_EGR_UG;    //generate event
 
-    //Configuracion Pines
-    //Alternate Fuction
-   //  temp = GPIOA->MODER;    //2 bits por pin
-   //  temp &= 0xFFFFCFFF;        //PA6 (alternative)
-   //  temp |= 0x00002000;
-   //  GPIOA->MODER = temp;
+	//Configuracion Pines
+	//Alternate Fuction
+	//  temp = GPIOA->MODER;    //2 bits por pin
+	//  temp &= 0xFFFFCFFF;        //PA6 (alternative)
+	//  temp |= 0x00002000;
+	//  GPIOA->MODER = temp;
 
 	//Configuracion Pin Ctrol_M_A
 	temp = GPIOA->AFR[0];
@@ -161,18 +164,12 @@ void TIM_3_Init (void)
 	temp |= 0x01000000;    //PA6 -> AF1;
 	GPIOA->AFR[0] = temp;
 
-    // Enable timer ver UDIS
-    //TIM3->DIER |= TIM_DIER_UIE;
-    TIM3->CR1 |= TIM_CR1_CEN;
+	// Enable timer ver UDIS
+	//TIM3->DIER |= TIM_DIER_UIE;
+	TIM3->CR1 |= TIM_CR1_CEN;
 
-    //Timer sin Int
-    //NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
-    //NVIC_InitStructure.NVIC_IRQChannelPriority = 5;
-    //NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-    //NVIC_Init(&NVIC_InitStructure);
-
-    //TIM3->CCR2 = 512;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
-    TIM3->CCR1 = 512;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+	//TIM3->CCR2 = 512;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+	TIM3->CCR1 = (DUTY_50_PERCENT + 1);        //delay = TIM3->CCRx = 512 - TIM1->CCR2
 }
 
 

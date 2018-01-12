@@ -74,6 +74,7 @@ volatile unsigned short take_temp_sample = 0;
 // parameters_typedef param_struct;
 
 //--- VARIABLES GLOBALES ---//
+volatile unsigned char current_excess = 0;
 
 
 
@@ -131,7 +132,7 @@ int main(void)
 	unsigned char i, ii;
 
 	unsigned char need_to_save = 0;
-	unsigned short power, last_power;
+	unsigned short d = 0;
 	unsigned int zero_current_loc = 0;
 
 	main_state_t main_state = MAIN_INIT;
@@ -197,18 +198,18 @@ int main(void)
 	TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
 	TIM_14_Init();					//Set current overflow
 
-	UpdateTIMSync (25);
+	// UpdateTIMSync (12);
 	// Update_TIM3_CH1 (100);		//lo uso para ver diff entre synchro adc con led
-	Update_TIM14_CH1 (512);		//lo uso para ver diff entre synchro adc con led
+	// Update_TIM14_CH1 (512);		//lo uso para ver diff entre synchro adc con led
 	// Update_TIM1_CH1 (100);		//lo uso para ver diff entre synchro adc con led
 
-	while (1)
-	{
-		ISENSE_OFF;
-		Wait_ms(100);
-		ISENSE_ON;
-		Wait_ms(2);
-	}
+	// while (1)
+	// {
+	// 	// ISENSE_OFF;
+	// 	// Wait_ms(100);
+	// 	// ISENSE_ON;
+	// 	// Wait_ms(2);
+	// }
 
 	// while (1)
 	// {
@@ -249,10 +250,11 @@ int main(void)
 		switch (main_state)
 		{
 			case MAIN_INIT:
-				Update_TIM3_CH1 (10);		//lo uso para ver diff entre synchro adc con led
 				main_state = SYNCHRO_ADC;
 				ADC1->CR |= ADC_CR_ADSTART;
 				seq_ready = 0;
+
+				Update_TIM14_CH1 (512);		//permito 1.75V en LM311
 				break;
 
 			case SYNCHRO_ADC:
@@ -262,29 +264,68 @@ int main(void)
 					main_state = SET_ZERO_CURRENT;
 					seq_ready = 0;
 					timer_standby = 2000;
+
+					// //pruebo sin INT!!!!
+					// EXTIOff ();
 				}
 				break;
 
 			case SET_ZERO_CURRENT:
+				if (!STOP_JUMPER)
+				{
+					if (!timer_meas)
+					{
+						timer_meas = 5;
+
+						if (d < 425)
+						// if (d < 250)		//empiezo suabe
+							d++;
+
+						UpdateTIMSync (d);
+						LED_OFF;
+					}
+				}
+				else
+				{
+					LED_ON;
+					d = 0;
+					UpdateTIMSync (0);
+				}
+				break;
+
+			case MAIN_OVERCURRENT:
 				if (!timer_standby)
 				{
-					timer_standby = 2000;
-					sprintf (s_lcd, "VIN: %d, VOUT: %d, I: %d\r\n", Vin_Sense, Vout_Sense, I_Sense);
-					Usart1Send(s_lcd);
+					timer_standby = 100;
+					if (LED)
+						LED_OFF;
+					else
+						LED_ON;
 				}
+
+				if (STOP_JUMPER)
+					main_state = SET_ZERO_CURRENT;
 				break;
 
 			default:
 				main_state = SYNCHRO_ADC;
 				break;
+		}	//fin switch main_state
+
+		if (!timer_standby)
+		{
+			timer_standby = 2000;
+			sprintf (s_lcd, "VIN: %d, VOUT: %d, d: %d\r\n", Vin_Sense, Vout_Sense, d);
+			Usart1Send(s_lcd);
 		}
 
-		// if (seq_ready)
-		// {
-		// 	seq_ready = 0;
-		// 	Usart1Send((char *) (const char *) "ADC Sync getted!\r\n");
-		//
-		// }
+		if (current_excess)
+		{
+			current_excess = 0;
+			d = 0;
+			Usart1Send("\r\n Overcurrent!");
+			main_state = MAIN_OVERCURRENT;
+		}
 	}	//fin while 1
 
 
@@ -314,7 +355,6 @@ void TimingDelay_Decrement(void)
 	if (timer_standby)
 		timer_standby--;
 
-
 	if (take_temp_sample)
 		take_temp_sample--;
 
@@ -339,15 +379,28 @@ void TimingDelay_Decrement(void)
 
 }
 
-void EXTI0_1_IRQHandler(void)		//nueva detecta el primer 0 en usart Consola PHILIPS
+void EXTI0_1_IRQHandler(void)
 {
 
 	if(EXTI->PR & 0x00000001)	//Line0
 	{
-		if (LED)
-			LED_OFF;
-		else
-			LED_ON;
+		LED_ON;
+
+		// if (CURRENT_LOOP)		//intenta corregir flux inbalance como lazo de corriente
+		// {
+		// 	//hubo interrupcion, me fijo que pwm estaba generando
+		// 	if (TIM1->CNT < TIM1->CCR1)
+		// 	{
+		// 		//generaba TIM1
+		//
+		// 	}
+		//
+		// }
+		UpdateTIMSync(0);
+
+
+		current_excess = 1;
+
 
 		EXTI->PR |= 0x00000001;
 	}

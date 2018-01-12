@@ -19,6 +19,9 @@
 
 //--- Exported types ---//
 //--- Exported constants ---//
+#define DUTY_50_PERCENT		500
+#define DUTY_100_PERCENT		1000
+
 //--- Exported macro ---//
 #define RCC_TIM1_CLK 		(RCC->APB2ENR & 0x00000800)
 #define RCC_TIM1_CLK_ON 	RCC->APB2ENR |= 0x00000800
