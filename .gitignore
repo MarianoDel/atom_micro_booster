@@ -5,7 +5,7 @@
 *.map
 *.bin
 .tags
-#GPATH
-#GRTAGS
-#GTAGS
+GPATH
+GRTAGS
+GTAGS
 *.zip
