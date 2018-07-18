@@ -3,7 +3,9 @@ Booster primera etapa 20V -> 350V
 
 micro STM32F030K6T6
 
-#antes de empezar revisar seleccion del micro
+Antes de empezar revisar seleccion del micro y configuracion
+------------------------------------------------------------
+
 stm32f0_flash.cfg		//work area size y flash image
 
 stm32f0_flash_lock.cfg		//work area size y flash image
