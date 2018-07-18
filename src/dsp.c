@@ -19,6 +19,7 @@
 
 /* Global variables ---------------------------------------------------------*/
 //------- de los PID ---------
+#ifdef USE_PID_CONTROLLERS
 volatile int acc = 0;
 short error_z1 = 0;
 short error_z2 = 0;
@@ -31,8 +32,8 @@ short d_last = 0;
 #define KDV	0			// 0
 
 //todos se dividen por 128
-#define KPI	32			// 1
-#define KII	8			// .125
+#define KPI	32			// 0
+#define KII	8			// 0.25
 #define KDI	0			// 0
 
 
@@ -51,7 +52,7 @@ short d_last = 0;
 #pragma message(STRING(K1I))
 #pragma message(STRING(K2I))
 #pragma message(STRING(K3I))
-
+#endif
 
 
 /* Module functions ---------------------------------------------------------*/
@@ -149,6 +150,25 @@ unsigned short MAFilter32 (unsigned short new_sample, unsigned short * vsample)
 	return total_ma >> 5;
 }
 
+unsigned short MAFilter32Fast (unsigned short * vsample)
+{
+	unsigned int total_ma;
+
+	total_ma = *(vsample) + *(vsample + 1) + *(vsample + 2) + *(vsample + 3) +
+            *(vsample + 4) + *(vsample + 5) + *(vsample + 6) + *(vsample + 7);
+        
+	total_ma += *(vsample + 8) + *(vsample + 9) + *(vsample + 10) + *(vsample + 11) +
+            *(vsample + 12) + *(vsample + 13) + *(vsample + 14) + *(vsample + 15);
+        
+	total_ma += *(vsample + 16) + *(vsample + 17) + *(vsample + 18) + *(vsample + 19) +
+            *(vsample + 20) + *(vsample + 21) + *(vsample + 22) + *(vsample + 23);
+        
+	total_ma += *(vsample + 24) + *(vsample + 25) + *(vsample + 26) + *(vsample + 27) +
+            *(vsample + 28) + *(vsample + 29) + *(vsample + 30) + *(vsample + 31);
+
+	return (unsigned short) (total_ma >> 5);
+}
+
 //Filtro circular, recibe
 //new_sample, p_vec_samples: vector donde se guardan todas las muestras
 //p_vector: puntero que recorre el vector de muestras, p_sum: puntero al valor de la sumatoria de muestras
@@ -183,6 +203,7 @@ unsigned short MAFilter32Circular (unsigned short new_sample, unsigned short * p
 	return total_ma >> 5;
 }
 
+#ifdef USE_PID_CONTROLLERS
 short PID (short setpoint, short sample)
 {
 	short error = 0;
@@ -247,3 +268,5 @@ short PID_roof (short setpoint, short sample, short local_last_d, short * e_z1, 
 
 	return d;
 }
+
+#endif

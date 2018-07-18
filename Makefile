@@ -111,7 +111,7 @@ SRC += ./src/it.c
 SRC += ./src/tim.c
 # SRC += ./src/spi.c
 SRC += ./src/uart.c
-
+SRC += ./src/dma.c
 
 
 
@@ -176,7 +176,7 @@ ASFLAGS = $(MCFLAGS) -g -gdwarf-2 -mthumb  -Wa,-amhls=$(<:.s=.lst) $(ADEFS)
 CPFLAGS = $(MCFLAGS) $(OPT) -g -gdwarf-2 -mthumb -fomit-frame-pointer -Wall -fdata-sections -ffunction-sections -fverbose-asm -Wa,-ahlms=$(<:.c=.lst)
 
 # SIN DEAD CODE, hace el STRIP
-LDFLAGS = $(MCFLAGS) -mthumb --specs=nano.specs -Wl,--gc-sections -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
+LDFLAGS = $(MCFLAGS) -mthumb -lm --specs=nano.specs -Wl,--gc-sections -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
 # CON DEAD CODE
 #LDFLAGS = $(MCFLAGS) -mthumb --specs=nano.specs -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
 #LDFLAGS = $(MCFLAGS) -mthumb -T$(LDSCRIPT) -Wl,-Map=$(FULL_PRJ).map,--cref,--no-warn-mismatch $(LIBDIR)
@@ -203,7 +203,7 @@ assobjects = $(assemblersources:.s=.o)
 
 all: $(objects) $(assobjects) $(FULL_PRJ).elf $(FULL_PRJ).bin
 	arm-none-eabi-size $(FULL_PRJ).elf
-	gtags
+	gtags -q
 
 $(objects): %.o: %.c
 	$(CC) -c $(CPFLAGS) -I. $(INCDIR) $< -o $@

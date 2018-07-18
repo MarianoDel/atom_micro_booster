@@ -224,11 +224,14 @@ int main(void)
                         if (d < 0)
                             d = 0;
 
-                        if (d > dmax)
-                            d = dmax;
+                        // if (d > dmax)
+                        //     d = dmax;
 
+                        if (d > 100)    //traba de hardware
+                            d = 100;
+                        
                         UpdateTIMSync (d);
-                        dmax = UpdateDMAX(vin_filtered);    //TODO: luego meter el filtro en sync con mustras
+                        dmax = UpdateDMAX(vin_filtered);    //TODO: luego meter el filtro en sync con muestras
                     }
                 }    //cierra sequence
             }
