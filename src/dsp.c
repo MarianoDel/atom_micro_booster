@@ -1,9 +1,11 @@
-/*
- * dsp.c
- *
- *  Created on: 02/12/2015
- *      Author: Mariano
- */
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ##
+// #### DSP.C #################################
+//---------------------------------------------
 
 #include "dsp.h"
 
@@ -13,6 +15,42 @@
 
 
 /* Externals variables ---------------------------------------------------------*/
+
+
+/* Global variables ---------------------------------------------------------*/
+//------- de los PID ---------
+volatile int acc = 0;
+short error_z1 = 0;
+short error_z2 = 0;
+short d_last = 0;
+
+/* Module Definitions ---------------------------------------------------------*/
+//todos se dividen por 128
+#define KPV	857			// 6.7 desde python PI_zpk_KpKi.py
+#define KIV	844			// 6.6 desde python PI_zpk_KpKi.py
+#define KDV	0			// 0
+
+//todos se dividen por 128
+#define KPI	32			// 1
+#define KII	8			// .125
+#define KDI	0			// 0
+
+
+#define K1V (KPV + KIV + KDV)
+#define K2V (KPV + KDV + KDV)
+#define K3V (KDV)
+
+#define K1I (KPI + KII + KDI)
+#define K2I (KPI + KDI + KDI)
+#define K3I (KDI)
+
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
+// #warning STRING(K1V)
+// #pragma message K1V
+#pragma message(STRING(K1I))
+#pragma message(STRING(K2I))
+#pragma message(STRING(K3I))
 
 
 
@@ -41,7 +79,7 @@ unsigned short MAFilterFast (unsigned short new_sample, unsigned short * vsample
 	*(vsample + 1) = *(vsample);
 	*(vsample) = new_sample;
 
-	return total_ma >> 2;
+	return (unsigned short) (total_ma >> 2);
 }
 
 //unsigned short MAFilter8 (unsigned short new_sample, unsigned short * vsample)
@@ -143,4 +181,69 @@ unsigned short MAFilter32Circular (unsigned short new_sample, unsigned short * p
 	*p_sum = (unsigned short) total_ma;
 
 	return total_ma >> 5;
+}
+
+short PID (short setpoint, short sample)
+{
+	short error = 0;
+	short d = 0;
+
+	short val_k1 = 0;
+	short val_k2 = 0;
+	short val_k3 = 0;
+
+	error = setpoint - sample;
+
+	//K1
+	acc = K1V * error;		//5500 / 32768 = 0.167 errores de hasta 6 puntos
+	val_k1 = acc >> 7;
+
+	//K2
+	acc = K2V * error_z1;		//K2 = no llega pruebo con 1
+	val_k2 = acc >> 7;			//si es mas grande que K1 + K3 no lo deja arrancar
+
+	//K3
+	acc = K3V * error_z2;		//K3 = 0.4
+	val_k3 = acc >> 7;
+
+	d = d_last + val_k1 - val_k2 + val_k3;
+
+	//Update variables PID
+	error_z2 = error_z1;
+	error_z1 = error;
+	d_last = d;
+
+	return d;
+}
+
+short PID_roof (short setpoint, short sample, short local_last_d, short * e_z1, short * e_z2)
+{
+	short error = 0;
+	short d = 0;
+
+	short val_k1 = 0;
+	short val_k2 = 0;
+	short val_k3 = 0;
+
+	error = setpoint - sample;
+
+	//K1
+	acc = K1I * error;		//5500 / 32768 = 0.167 errores de hasta 6 puntos
+	val_k1 = acc >> 7;
+
+	//K2
+	acc = K2I * *e_z1;		//K2 = no llega pruebo con 1
+	val_k2 = acc >> 7;			//si es mas grande que K1 + K3 no lo deja arrancar
+
+	//K3
+	acc = K3I * *e_z2;		//K3 = 0.4
+	val_k3 = acc >> 7;
+
+	d = local_last_d + val_k1 - val_k2 + val_k3;
+
+	//Update variables PID
+	*e_z2 = *e_z1;
+	*e_z1 = error;
+
+	return d;
 }

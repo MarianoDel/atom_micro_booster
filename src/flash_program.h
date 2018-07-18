@@ -1,3 +1,12 @@
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F103
+// ##
+// #### FLASH_PROGRAM.H ################################
+//---------------------------------------------
 #ifndef FLASH_PROGRAM_H_
 #define FLASH_PROGRAM_H_
 

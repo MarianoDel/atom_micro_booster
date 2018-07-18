@@ -1,19 +1,12 @@
-/**
-  ******************************************************************************
-  * @file    Template_2/main.h
-  * @author  Nahuel
-  * @version V1.0
-  * @date    22-August-2014
-  * @brief   Header for tim module
-  ******************************************************************************
-  * @attention
-  *
-  *
-  *
-  ******************************************************************************
-  */
-
-/* Define to prevent recursive inclusion -------------------------------------*/
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F103
+// ##
+// #### DSP.H ################################
+//---------------------------------------------
 #ifndef __STM32F0X_TIM_H
 #define __STM32F0X_TIM_H
 
@@ -21,6 +14,14 @@
 //--- Exported constants ---//
 #define DUTY_50_PERCENT		500
 #define DUTY_100_PERCENT		1000
+
+#define ENABLE_TIM1			TIM1->CR1 |= TIM_CR1_CEN;
+#define DISABLE_TIM1			TIM1->CR1 &= ~TIM_CR1_CEN;
+
+#define ENABLE_TIM3			TIM3->CR1 |= TIM_CR1_CEN;
+#define DISABLE_TIM3			TIM3->CR1 &= ~TIM_CR1_CEN;
+
+
 
 //--- Exported macro ---//
 #define RCC_TIM1_CLK 		(RCC->APB2ENR & 0x00000800)

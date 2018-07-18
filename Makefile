@@ -106,8 +106,8 @@ SRC += ./src/adc.c
 SRC += ./src/dsp.c
 SRC += ./src/flash_program.c
 SRC += ./src/gpio.c
-# SRC += ./src/hard.c
-SRC += ./src/stm32f0xx_it.c
+SRC += ./src/hard.c
+SRC += ./src/it.c
 SRC += ./src/tim.c
 # SRC += ./src/spi.c
 SRC += ./src/uart.c
@@ -203,6 +203,7 @@ assobjects = $(assemblersources:.s=.o)
 
 all: $(objects) $(assobjects) $(FULL_PRJ).elf $(FULL_PRJ).bin
 	arm-none-eabi-size $(FULL_PRJ).elf
+	gtags
 
 $(objects): %.o: %.c
 	$(CC) -c $(CPFLAGS) -I. $(INCDIR) $< -o $@

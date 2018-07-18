@@ -1,10 +1,12 @@
-/*
- * adc.h
- *
- *  Created on: 10/09/2014
- *      Author: Mariano
- */
-
+//---------------------------------------------
+// ##
+// ## @Author: Med
+// ## @Editor: Emacs - ggtags
+// ## @TAGS:   Global
+// ## @CPU:    STM32F030
+// ##
+// #### ADC.H #################################
+//---------------------------------------------
 #ifndef ADC_H_
 #define ADC_H_
 
@@ -23,9 +25,23 @@
 //----------- End of ADC Configurations --------------//
 
 #ifdef ADC_WITH_INT
+#ifdef VER_1_1
 #define Vin_Sense		adc_ch[0]
-#define Vout_Sense	adc_ch[1]
-#define I_Sense		adc_ch[2]
+#define Vout_Sense	        adc_ch[1]
+#define I_Sense_MOS_A	       	adc_ch[2]
+#define I_Sense_MOS_B	      	adc_ch[3]
+#define ADC_CHANNEL_QUANTITY         4
+#define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
+#endif
+
+#ifdef VER_1_0
+#define Vin_Sense		adc_ch[0]
+#define Vout_Sense	        adc_ch[1]
+#define I_Sense	        	adc_ch[2]
+#define ADC_CHANNEL_QUANTITY         3
+#define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
+#endif
+
 #endif
 
 
