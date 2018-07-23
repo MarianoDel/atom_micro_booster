@@ -16,15 +16,59 @@
 // #define VER_1_0
 #define VER_1_1		//cambia pinout respecto VER_1_0
 
-//-------- Type of Program ----------------
+//---- Configuration for Hardware Versions -------
+#ifdef VER_1_1
+#define HARDWARE_VERSION_1_1
+#define SOFTWARE_VERSION_1_1
+#endif
+#ifdef VER_1_0
+#define HARDWARE_VERSION_1_0
+#define SOFTWARE_VERSION_1_0
+#endif
+
+
+//---- Features Configuration ----------------
 // #define DEBUG_ON
 // #define PRODUCTION_PRGRM
-#define TEST_INT_PRGRM
+// #define TEST_INT_PRGRM
+#define TEST_ADC_AND_DMA
 
 
-//-------- Type of Program and Features ----------------
+//------ Configuration for Firmware-Channels -----
 
-//-------- Kind of Reports Sended ----------------
+
+//---- End of Features Configuration ----------
+
+
+
+//--- Hardware Welcome Code ------------------//
+#ifdef HARDWARE_VERSION_1_1
+#define HARD "Hardware V: 1.1\n"
+#endif
+#ifdef HARDWARE_VERSION_1_0
+#define HARD "Hardware V: 1.0\n"
+#endif
+
+//--- Software Welcome Code ------------------//
+#ifdef SOFTWARE_VERSION_1_2
+#define SOFT "Software V: 1.2\n"
+#endif
+#ifdef SOFTWARE_VERSION_1_1
+#define SOFT "Software V: 1.1\n"
+#endif
+#ifdef SOFTWARE_VERSION_1_0
+#define SOFT "Software V: 1.0\n"
+#endif
+
+//--- Type of Program Announcement ----------------
+#ifdef TEST_INT_PRGRM
+#define FEATURES "Programa de Testeo INT\n"
+#endif
+#ifdef TEST_ADC_AND_DMA
+#define FEATURES "Programa de Testeo ADC -> DMA\n"
+#endif
+
+
 
 //-------- Others Configurations depending on the formers ------------
 //-------- Hysteresis Conf ------------------------

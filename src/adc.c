@@ -12,12 +12,11 @@
 #include "adc.h"
 #include "stm32f0xx.h"
 #include "hard.h"
-// #include "dsp.h"
 
 
 /* Externals ------------------------------------------------------------------*/
 extern volatile unsigned short adc_ch [];
-extern volatile unsigned short tt_take_photo_sample;
+
 
 #ifdef ADC_WITH_INT
 extern volatile unsigned char seq_ready;
@@ -88,7 +87,6 @@ void AdcConfig (void)
     //las dos int (usar DMA?) y pierde el valor intermedio
     //ADC1->SMPR |= ADC_SampleTime_1_5Cycles;			//20.7 de salida son SP 420 (regula mal)
 
-#ifdef ADC_WITH_INT
     //set channel selection
 #ifdef VER_1_1
     ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_2 | ADC_Channel_3;
@@ -97,7 +95,8 @@ void AdcConfig (void)
 #ifdef VER_1_0
     ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_2;
 #endif
-        
+    
+#ifdef ADC_WITH_INT        
     //set interrupts
     ADC1->IER |= ADC_IT_EOC;
 
@@ -115,6 +114,10 @@ void AdcConfig (void)
     //calibrar ADC
     ADCGetCalibrationFactor();
 
+#ifdef ADC_WITH_DMA
+    ADC1->CFGR1 |= ADC_CFGR1_DMAEN | ADC_CFGR1_DMACFG;
+#endif
+    
     // Enable ADC1
     ADC1->CR |= ADC_CR_ADEN;
 }
@@ -237,21 +240,21 @@ unsigned int ADCGetCalibrationFactor (void)
 #ifdef ADC_WITH_TEMP_SENSE
 void UpdateTemp(void)
 {
-	//hago update cada 1 seg
-	if (!tt_take_temp_sample)
-	{
-		tt_take_temp_sample = 1000;
+    //hago update cada 1 seg
+    if (!tt_take_temp_sample)
+    {
+        tt_take_temp_sample = 1000;
 
-		board_temp [board_temp_index] = ReadADC1_SameSampleTime(ADC_CH16);
-		//board_temp [0] = ReadADC1_SameSampleTime(ADC_CH16);
+        board_temp [board_temp_index] = ReadADC1_SameSampleTime(ADC_CH16);
+        //board_temp [0] = ReadADC1_SameSampleTime(ADC_CH16);
 
-		if (board_temp_index < (SIZEOF_BOARD_TEMP - 1))
-			board_temp_index++;
-		else
-			board_temp_index = 0;
+        if (board_temp_index < (SIZEOF_BOARD_TEMP - 1))
+            board_temp_index++;
+        else
+            board_temp_index = 0;
 
-		new_temp_sample = 1;
-	}
+        new_temp_sample = 1;
+    }
 }
 
 //devuelve el valor promedio de la temperatura
@@ -275,26 +278,26 @@ unsigned short GetTemp (void)
 
 void FillTempBuffer (void)
 {
-	unsigned char i;
-	unsigned short dummy;
+    unsigned char i;
+    unsigned short dummy;
 
-	dummy = ReadADC1_SameSampleTime(ADC_CH16);
+    dummy = ReadADC1_SameSampleTime(ADC_CH16);
 
-	for (i = 0; i < SIZEOF_BOARD_TEMP; i++)
-		 board_temp[i] = dummy;
+    for (i = 0; i < SIZEOF_BOARD_TEMP; i++)
+        board_temp[i] = dummy;
 
 }
 
 short ConvertTemp (unsigned short adc_temp)
 {
-	int32_t temperature; /* will contain the temperature in degree Celsius */
-	//temperature = (((int32_t) ADC1->DR * VDD_APPLI / VDD_CALIB) - (int32_t) *TEMP30_CAL_ADDR );
-	temperature = (int32_t) *TEMP30_CAL_ADDR - adc_temp;
-	temperature *= 1000;
-	temperature = temperature / 5336;	//4.3mV / °C
-	temperature = temperature + 30;
+    int32_t temperature; /* will contain the temperature in degree Celsius */
+    //temperature = (((int32_t) ADC1->DR * VDD_APPLI / VDD_CALIB) - (int32_t) *TEMP30_CAL_ADDR );
+    temperature = (int32_t) *TEMP30_CAL_ADDR - adc_temp;
+    temperature *= 1000;
+    temperature = temperature / 5336;	//4.3mV / °C
+    temperature = temperature + 30;
 
-	return (short) temperature;
+    return (short) temperature;
 }
 #endif //ADC_WITH_TEMP_SENSE
 

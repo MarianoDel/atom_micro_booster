@@ -1,8 +1,14 @@
 * MICRO BOOSTER ETAPA B con stm32f030K6T6
 ** Arranque Hardware
-*** Implementar DMA para el ADC
+*** DONE Implementar DMA para el ADC
+    CLOSED: [2018-07-23 Mon 11:10]
+*** El muestreo con TIM1 termina muy sobre el nuevo pulso
+    - Corregir el tiempo de muestreo atrasando o adelentando el sample time
+    -   
+
 *** Revisar sensado de corriente - parece no funcionar ok -
 *** Maxima tension de salida - quema el diodo FR307 -
+    - Agregar red Snubber???
 *** Soft start del filtro para Vout a traves de dmax y Vin
 
 ** Info por el puerto serie
@@ -14,61 +20,9 @@
     - [ ] tension de entrada sensada
     - [ ] info de corriente (medida q1 y q2 o algo asi)
 
-** Menues de Display LCD [5/6]
-   - [ ] Agregar State Machine para no interrumpir programa
-   - [X] Seteo Slave
-   - [X] Seteo Master
-   - [X] Seteo 2 amper, maximo canal y minimo para el forward
-   - [X] seteo de canal propio
-   - [X] funciones de programas
-** Funcionalidad de Modos
-*** Modo Slave
-*** Modo Master
-    - adentro tiene modo programas, pero los envia en dmx512
-*** Modo Programs
-** Listado de Menues
-*** Master + Programas
-    - [ ] envia programas por dmx512
-
-*** Slave (DMX512) [3/3]
-    - [X] Canal DMX
-    - [X] Cantidad de canales
-    - [X] Si usa Grandmaster
-
-*** Programas [2/2]
-    - [X] Seteo del programa especifico
-    - [X] Seteo de velocidad de avance
-
-*** Hardware [1/3]
-    - [X] Corriente maxima
-    - [ ] tension maxima
-    - [ ] tension de los Leds en el canal
-
-** DONE Overtemp
-   CLOSED: [2018-07-02 Mon 07:26]
-** DONE SaveConf
-   CLOSED: [2018-07-02 Mon 07:26]
-   - terminar con endconfig
-   - usar rgb 4ch y sus mediciones
-** DONE Modo Master
-   CLOSED: [2018-07-02 Mon 07:26]
-** GrandMaster en Slave Mode
-** Prueba canal 511 en Master Mode
-** Mensaje de Bienvenida
+** DONE Mensaje de Bienvenida
+   CLOSED: [2018-07-23 Mon 12:18]
 
 
 * Caracteristicas especiales de Hardware
-** Rojos
-   - Cantidad: 16
-   - Tension para seteo 1 Amper: 18.4V
-   - Tension para seteo 2 Amper: 20.4V
 
-** Verdes
-   - Cantidad: 16
-   - Tension para seteo 1 Amper: 27.6V
-   - Tension para seteo 2 Amper: 30.8V
-
-** Azules
-   - Cantidad: 16
-   - Tension para seteo 1 Amper: 24.8V
-   - Tension para seteo 2 Amper: 28.4V

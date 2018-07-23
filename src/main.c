@@ -23,6 +23,7 @@
 
 #include "core_cm0.h"
 #include "adc.h"
+#include "dma.h"
 #include "flash_program.h"
 #include "dsp.h"
 
@@ -39,13 +40,9 @@ volatile unsigned char rx1buff[SIZEOF_DATA];
 volatile unsigned char usart1_have_data = 0;
 
 // ------- Externals del o para el ADC -------
-#ifdef ADC_WITH_INT
-
 volatile unsigned short adc_ch[ADC_CHANNEL_QUANTITY];
 volatile unsigned char seq_ready = 0;
 
-
-#endif
 
 // ------- Externals para timers -------
 volatile unsigned short timer_led = 0;
@@ -92,16 +89,15 @@ volatile unsigned char timer_filters = 0;
 void TimingDelay_Decrement (void);
 void Overcurrent_Shutdown (void);
 
-#ifdef VER_1_0
-// ------- para el LM311 -------
-extern void EXTI0_1_IRQHandler(void);
-#endif
-
 #ifdef VER_1_1
 // ------- para el LM311 -------
 extern void EXTI4_15_IRQHandler(void);
 #endif
 
+#ifdef VER_1_0
+// ------- para el LM311 -------
+extern void EXTI0_1_IRQHandler(void);
+#endif
 
 
 //--- Private Definitions ---//
@@ -167,35 +163,114 @@ int main(void)
 //---------- Pruebas de Hardware --------//
 
 //---------- Test INT VER_1_1 --------//
+//---------- Test ADC -> DMA VER_1_1 --------//
+#ifdef TEST_ADC_AND_DMA
+    EXTIOff ();    
+    USART1Config();
+
+    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
+    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+    UpdateTIMSync (25);
+
+    //---- Welcome Code ------------//
+    //---- Defines from hard.h -----//
+#ifdef HARD
+    Usart1Send((const char *) HARD);
+    Wait_ms(100);
+#else
+#error	"No Hardware defined in hard.h file"
+#endif
+
+#ifdef SOFT
+    Usart1Send((const char *) SOFT);
+    Wait_ms(100);
+#else
+#error	"No Soft Version defined in hard.h file"
+#endif
+
+#ifdef FEATURES
+    Usart1Send((const char *) FEATURES);
+    Wait_ms(100);
+#endif
+    
+    
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_INIT:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+                if (LED)
+                    LED_OFF;
+                else
+                    LED_ON;
+            }
+            break;
+        }
+
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "VIN: %d, VOUT: %d, dmax: %d\r\n", Vin_Sense, Vout_Sense, dmax);
+            Usart1Send(s_lcd);
+        }
+    }
+    
+#endif    //TEST_ADC_AND_DMA
+//---------- Fin Test ADC -> DMA VER_1_1 --------//    
+
 #ifdef TEST_INT_PRGRM
     //arranca como programa de produccion pero no mueve led, solo lo prende en INT
     //RECORDAR QUITAR JUMPER en driver (para no mover mosfets)
     //colocar generador de funciones en I_MOS_A o I_MOS_B senial triangular
     EXTIOff ();    
     USART1Config();
-    AdcConfig();		//recordar habilitar sensor en adc.h
 
     TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
     TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
 
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+    UpdateTIMSync (25);
+    
     while (1)
     {
         switch (main_state)
         {
         case MAIN_INIT:
-            main_state = MAIN_SYNCHRO_ADC;
-            ADC1->CR |= ADC_CR_ADSTART;
-            seq_ready = 0;
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+                if (LED)
+                    LED_OFF;
+                else
+                    LED_ON;
+            }
             break;
 
         case MAIN_SYNCHRO_ADC:
-            if (seq_ready)
-            {
+            // if (seq_ready)
+            // {
                 Usart1Send((char *) (const char *) "ADC Sync getted!\r\n");
                 main_state = MAIN_SET_ZERO_CURRENT;
                 seq_ready = 0;
                 timer_standby = 2000;
-            }
+            // }
             break;
 
         case MAIN_SET_ZERO_CURRENT:
@@ -294,10 +369,8 @@ int main(void)
             vin_vector[0] = Vin_Sense;
             vin_filtered = MAFilter8(vin_vector);
         }
-            
-            
-
-        UpdateLed();
+                        
+        // UpdateLed();
         
     }	//fin while 1
 #endif TEST_INT_PRGRM

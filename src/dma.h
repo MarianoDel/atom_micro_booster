@@ -11,7 +11,7 @@
 #define _DMA_H_
 
 //--- Defines for configuration ----------------
-#define DMA_WITH_INTERRUPT
+// #define DMA_WITH_INTERRUPT
 
 //--- Exported types ---//
 #define RCC_DMA_CLK (RCC->AHBENR & RCC_AHBENR_DMAEN)
