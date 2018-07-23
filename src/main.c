@@ -53,7 +53,7 @@ volatile unsigned short take_temp_sample = 0;
 
 // ------- Definiciones para los filtros -------
 #define SIZEOF_FILTER    8
-#define UNDERSAMPLING_TICKS    5
+#define UNDERSAMPLING_TICKS    10
 unsigned short vin_vector [SIZEOF_FILTER];
 // unsigned short vbatt [SIZEOF_FILTER];
 // unsigned short iboost [SIZEOF_FILTER];
@@ -67,7 +67,8 @@ short d = 0;
 short ez1 = 0;
 short ez2 = 0;
 unsigned short dmax = 0;
-
+unsigned short last_d = 0;
+#define DELTA_D    20
 
 // ------- de los timers -------
 volatile unsigned short wait_ms_var = 0;
@@ -185,6 +186,148 @@ int main(void)
     Wait_ms(100);
 #endif
 
+
+//---------- Test FIXED VOUT VER_1_1 --------//
+    //poner y quitar el jumper me recupera del overcurrent
+#ifdef TEST_FIXED_VOUT
+
+    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
+    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_INIT:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+                if (LED)
+                    LED_OFF;
+                else
+                    LED_ON;
+
+                UpdateTIMSync(0);
+                d = 0;
+                last_d = 0;
+                dmax = 0;
+                EXTIOn();
+                main_state = MAIN_GENERATING;
+            }
+            break;
+
+        case MAIN_GENERATING:
+            if (!STOP_JUMPER)
+            {
+                if (sequence_ready)
+                {
+                    sequence_ready_reset;
+
+                    if (undersampling < (UNDERSAMPLING_TICKS - 1))
+                        undersampling++;
+                    else
+                    {
+                        undersampling = 0;
+                        d = PID_roof (VOUT_200V, Vout_Sense, d, &ez1, &ez2);
+                    
+                        if (d < 0)
+                            d = 0;
+
+                        if (d > dmax)
+                            d = dmax;
+
+                        //derivativo exterior DELTA
+                        if (d > (last_d + DELTA_D))
+                        {
+                            d = last_d + DELTA_D;
+                            last_d = d;
+                        }
+                        else
+                            last_d = d;
+                                                
+                        UpdateTIMSync (d);
+                    }
+                }    //cierra sequence
+            }
+            else
+            {
+                UpdateTIMSync (0);
+                d = 0;
+                last_d = 0;
+                timer_standby = 300;    //doy minimo 300ms para reactivar
+                main_state = MAIN_JUMPER_PROTECTED;
+            }            
+            break;
+
+        case MAIN_JUMPER_PROTECTED:
+            if (!timer_standby)
+            {
+                if (!STOP_JUMPER)
+                {
+                    //vuelvo a INIT
+                    main_state = MAIN_INIT;
+                }
+            }                
+            break;
+
+        case MAIN_OVERCURRENT:
+            if ((!PROT_MOS_A) && (!PROT_MOS_B))
+            {
+                if (!timer_standby)
+                {
+                    LED_OFF;
+                    ENABLE_TIM3;
+                    ENABLE_TIM1;
+                    main_state = MAIN_INIT;
+                }
+            }
+            break;
+
+        default:
+            main_state = MAIN_INIT;
+            break;
+        }	//fin switch main_state
+
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax: %d\n", vin_filtered, Vout_Sense, d, dmax);
+            Usart1Send(s_lcd);
+        }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            dmax = UpdateDMAX(vin_filtered);
+        }
+
+        if (current_excess)
+        {
+            if (current_excess == 4)
+                Usart1Send("\n Overcurrent on Q2 MOS_A!\n");
+            else if (current_excess == 5)
+                Usart1Send("\n Overcurrent on Q3 MOS_B!\n");
+            else
+                Usart1Send("\n Overcurrent!\n");
+
+            main_state = MAIN_OVERCURRENT;
+            timer_standby = 500;
+            current_excess = 0;            
+        }
+    }       
+#endif    //TEST_FIXED_VOUT
+//---------- Fin Test FIXED VOUT VER_1_1 --------//    
 
 //---------- Test FIXED D VER_1_1 --------//
 #ifdef TEST_FIXED_D

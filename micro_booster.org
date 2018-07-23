@@ -14,6 +14,13 @@
     - [ ] definir dmax segun la tension de entrada CORREGIR de 20 a 25V tiene el valor de 20
     - [ ] revisar Vout en funcion de dmax con algo de carga
 
+*** TODO Temas del PID
+    - Con un valor fijo de d; ejemplo d = 100 y Vout = 0, sin carga, salta la proteccion de 
+      corriente
+    - Podria implementar un d delta de 5 puntos maximo, para que no avance tan rapido
+    - Me ayuda tambien con el Soft Start
+
+*** TODO Con corriente en QB salta proteccion de QA
 ** Info por el puerto serie
 *** Por el puerto serie debiera enviar info
     - [ ] potencia estimada
