@@ -161,25 +161,9 @@ int main(void)
 
 
 //---------- Pruebas de Hardware --------//
-
-//---------- Test INT VER_1_1 --------//
-//---------- Test ADC -> DMA VER_1_1 --------//
-#ifdef TEST_ADC_AND_DMA
     EXTIOff ();    
     USART1Config();
-
-    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
-    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
-
-    AdcConfig();
-
-    //-- DMA configuration.
-    DMAConfig();
-    DMA1_Channel1->CCR |= DMA_CCR_EN;
-
-    ADC1->CR |= ADC_CR_ADSTART;
-    UpdateTIMSync (25);
-
+    
     //---- Welcome Code ------------//
     //---- Defines from hard.h -----//
 #ifdef HARD
@@ -200,7 +184,79 @@ int main(void)
     Usart1Send((const char *) FEATURES);
     Wait_ms(100);
 #endif
+
+
+//---------- Test FIXED D VER_1_1 --------//
+#ifdef TEST_FIXED_D
+
+    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
+    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+    UpdateTIMSync (25);
+
+    while (1)
+    {
+        if (sequence_ready)
+        {
+            sequence_ready_reset;
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
+        }
+
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax: %d\n", vin_filtered, Vout_Sense, d, dmax);
+            Usart1Send(s_lcd);
+        }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            dmax = UpdateDMAX(vin_filtered);
+        }
+
+        if (current_excess)
+        {
+            if (current_excess == 4)
+                Usart1Send("\n Overcurrent on Q2 MOS_A!\n");
+            else if (current_excess == 5)
+                Usart1Send("\n Overcurrent on Q3 MOS_B!\n");
+            else
+                Usart1Send("\n Overcurrent!\n");
+
+            current_excess = 0;            
+        }
+    }       
+#endif    //TEST_FIXED_D
+//---------- Fin Test FIXED D VER_1_1 --------//    
     
+//---------- Test ADC -> DMA VER_1_1 --------//
+#ifdef TEST_ADC_AND_DMA
+
+    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
+    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+    UpdateTIMSync (10);    
     
     while (1)
     {
@@ -221,21 +277,29 @@ int main(void)
         if (!timer_standby)
         {
             timer_standby = 2000;
-            sprintf (s_lcd, "VIN: %d, VOUT: %d, dmax: %d\r\n", Vin_Sense, Vout_Sense, dmax);
+            sprintf (s_lcd, "VIN: %d, VOUT: %d, dmax: %d\n", vin_filtered, Vout_Sense, dmax);
             Usart1Send(s_lcd);
         }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            dmax = UpdateDMAX(vin_filtered);
+        }
+        
     }
     
 #endif    //TEST_ADC_AND_DMA
 //---------- Fin Test ADC -> DMA VER_1_1 --------//    
 
+//---------- Test INT VER_1_1 --------//    
 #ifdef TEST_INT_PRGRM
     //arranca como programa de produccion pero no mueve led, solo lo prende en INT
     //RECORDAR QUITAR JUMPER en driver (para no mover mosfets)
     //colocar generador de funciones en I_MOS_A o I_MOS_B senial triangular
-    EXTIOff ();    
-    USART1Config();
-
     TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
     TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
 
@@ -379,8 +443,6 @@ int main(void)
 //---------- Programa de Produccion --------//    
     //--- Welcome code ---//
 #ifdef PRODUCTION_PRGRM
-    EXTIOff ();
-    USART1Config();
     AdcConfig();		//recordar habilitar sensor en adc.h
 
     TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
@@ -577,10 +639,15 @@ void Overcurrent_Shutdown (void)
     DISABLE_TIM3;
     DISABLE_TIM1;
 
-    LED_ON;    //avio con el led una vez que freno los pwm   
+    LED_ON;    //aviso con el led una vez que freno los pwm   
 
     //ahora aviso del error
-    current_excess = 1;
+    if (EXTI->PR & 0x00000010)    //Linea 4 es PROT_MOS_A
+        current_excess = 4;
+    else if (EXTI->PR & 0x00000020)    //Linea 5 es PROT_MOS_B
+        current_excess = 5;
+    else
+        current_excess = 1;
 }
 
 

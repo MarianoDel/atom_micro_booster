@@ -31,7 +31,8 @@
 // #define DEBUG_ON
 // #define PRODUCTION_PRGRM
 // #define TEST_INT_PRGRM
-#define TEST_ADC_AND_DMA
+// #define TEST_ADC_AND_DMA
+#define TEST_FIXED_D
 
 
 //------ Configuration for Firmware-Channels -----
@@ -66,6 +67,9 @@
 #endif
 #ifdef TEST_ADC_AND_DMA
 #define FEATURES "Programa de Testeo ADC -> DMA\n"
+#endif
+#ifdef TEST_FIXED_D
+#define FEATURES "Programa de ciclo d fijo\n"
 #endif
 
 

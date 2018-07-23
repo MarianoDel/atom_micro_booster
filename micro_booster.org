@@ -2,14 +2,17 @@
 ** Arranque Hardware
 *** DONE Implementar DMA para el ADC
     CLOSED: [2018-07-23 Mon 11:10]
-*** El muestreo con TIM1 termina muy sobre el nuevo pulso
+*** DONE El muestreo con TIM1 termina muy sobre el nuevo pulso
+    CLOSED: [2018-07-23 Mon 12:53]
     - Corregir el tiempo de muestreo atrasando o adelentando el sample time
-    -   
+     Lo paso a 71.5 ciclos y termina muestreando a 24KHz
 
-*** Revisar sensado de corriente - parece no funcionar ok -
-*** Maxima tension de salida - quema el diodo FR307 -
+*** TODO Revisar sensado de corriente - parece no funcionar ok -
+*** TODO Maxima tension de salida - quema el diodo FR307 -
     - Agregar red Snubber???
-*** Soft start del filtro para Vout a traves de dmax y Vin
+*** TODO Soft start del filtro para Vout a traves de dmax y Vin [0/2]
+    - [ ] definir dmax segun la tension de entrada CORREGIR de 20 a 25V tiene el valor de 20
+    - [ ] revisar Vout en funcion de dmax con algo de carga
 
 ** Info por el puerto serie
 *** Por el puerto serie debiera enviar info

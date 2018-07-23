@@ -263,14 +263,28 @@ void GPIO_Config (void)
 
 }
 
+#ifdef VER_1_1
 inline void EXTIOff (void)
 {
-	EXTI->IMR &= ~0x00000001;
+    EXTI->IMR &= ~0x00000030;
 }
 
 inline void EXTIOn (void)
 {
-	EXTI->IMR |= 0x00000001;
+    EXTI->IMR |= 0x00000030;
 }
+#endif
+
+#ifdef VER_1_0
+inline void EXTIOff (void)
+{
+    EXTI->IMR &= ~0x00000001;
+}
+
+inline void EXTIOn (void)
+{
+    EXTI->IMR |= 0x00000001;
+}
+#endif
 
 //--- end of file ---//
