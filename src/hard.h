@@ -90,9 +90,10 @@
 #define VIN_25V    704
 #define VIN_20V    561    //1.81V
 
-#define VOUT_200V    415
-#define VOUT_300V    620
-#define VOUT_350V    716
+// #define VOUT_200V    415
+#define VOUT_200V    386    //ajustado 24-07-18
+#define VOUT_300V    660    //ajustado 24-07-18
+#define VOUT_350V    802    //ajustado 24-07-18
 
 //------- PIN CONFIG ----------------------
 #ifdef VER_1_1
@@ -193,8 +194,7 @@
 typedef enum
 {
     MAIN_INIT = 0,
-    MAIN_SYNCHRO_ADC,
-    MAIN_SET_ZERO_CURRENT,
+    MAIN_SOFT_START,
     MAIN_GENERATING,
     MAIN_OVERCURRENT,
     MAIN_JUMPER_PROTECTED,
@@ -246,5 +246,6 @@ void ShowPower (char *, unsigned short, unsigned int, unsigned int);
 void ChangeLed (unsigned char);
 void UpdateLed (void);
 unsigned short UpdateDMAX (unsigned short);
+unsigned short UpdateDMAXSF (unsigned short);
 
 #endif /* HARD_H_ */

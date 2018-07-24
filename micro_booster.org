@@ -21,6 +21,11 @@
     - Me ayuda tambien con el Soft Start
 
 *** TODO Con corriente en QB salta proteccion de QA
+    - 24-07-18 Mejore la pista con cable de red, el sensado ya no pasa por debajo del transformador
+    - 24-07-18 Ahora no aparecen pulsos en de corriente en QB
+*** La bobina de salida ve una diferencia de tension muy alta en arranque
+    - definir dmax respecto de la bobina de salida
+      Vout trafo * Ton = I * Lm
 ** Info por el puerto serie
 *** Por el puerto serie debiera enviar info
     - [ ] potencia estimada

@@ -68,7 +68,7 @@ short ez1 = 0;
 short ez2 = 0;
 unsigned short dmax = 0;
 unsigned short last_d = 0;
-#define DELTA_D    20
+#define DELTA_D    2
 
 // ------- de los timers -------
 volatile unsigned short wait_ms_var = 0;
@@ -220,51 +220,42 @@ int main(void)
                 last_d = 0;
                 dmax = 0;
                 EXTIOn();
-                main_state = MAIN_GENERATING;
+                main_state = MAIN_SOFT_START;
             }
             break;
 
-        case MAIN_GENERATING:
-            if (!STOP_JUMPER)
+        case MAIN_SOFT_START:
+            if (sequence_ready)
             {
-                if (sequence_ready)
+                sequence_ready_reset;
+
+                if (undersampling < (UNDERSAMPLING_TICKS - 1))
+                    undersampling++;
+                else
                 {
-                    sequence_ready_reset;
-
-                    if (undersampling < (UNDERSAMPLING_TICKS - 1))
-                        undersampling++;
-                    else
-                    {
-                        undersampling = 0;
-                        d = PID_roof (VOUT_200V, Vout_Sense, d, &ez1, &ez2);
+                    undersampling = 0;
+                    d = PID_roof (VOUT_350V, Vout_Sense, d, &ez1, &ez2);
+                    // d = PID_roof (VOUT_300V, Vout_Sense, d, &ez1, &ez2);                    
+                    // d = PID_roof (VOUT_200V, Vout_Sense, d, &ez1, &ez2);                    
                     
-                        if (d < 0)
-                            d = 0;
+                    if (d < 0)
+                        d = 0;
 
-                        if (d > dmax)
-                            d = dmax;
+                    if (d > dmax)
+                        d = dmax;
 
-                        //derivativo exterior DELTA
-                        if (d > (last_d + DELTA_D))
-                        {
-                            d = last_d + DELTA_D;
-                            last_d = d;
-                        }
-                        else
-                            last_d = d;
-                                                
-                        UpdateTIMSync (d);
+                    //derivativo exterior DELTA solo cuando incremeta
+                    if (d > (last_d + DELTA_D))
+                    {
+                        d = last_d + DELTA_D;
+                        last_d = d;
                     }
-                }    //cierra sequence
-            }
-            else
-            {
-                UpdateTIMSync (0);
-                d = 0;
-                last_d = 0;
-                timer_standby = 300;    //doy minimo 300ms para reactivar
-                main_state = MAIN_JUMPER_PROTECTED;
-            }            
+                    else
+                        last_d = d;
+                                                
+                    UpdateTIMSync (d);
+                }
+            }    //cierra sequence
             break;
 
         case MAIN_JUMPER_PROTECTED:
@@ -281,12 +272,12 @@ int main(void)
         case MAIN_OVERCURRENT:
             if ((!PROT_MOS_A) && (!PROT_MOS_B))
             {
-                if (!timer_standby)
-                {
+                if ((!timer_standby) && (STOP_JUMPER))    //solo destrabo si se coloca el Jumper y se quita
+                {                                         //en MAIN_JUMPER_PROTECTED
                     LED_OFF;
                     ENABLE_TIM3;
                     ENABLE_TIM1;
-                    main_state = MAIN_INIT;
+                    main_state = MAIN_JUMPER_PROTECTED;
                 }
             }
             break;
@@ -295,6 +286,18 @@ int main(void)
             main_state = MAIN_INIT;
             break;
         }	//fin switch main_state
+
+        //Cosas que no tienen tanto que ver con las muestras o el estado del programa
+        if ((STOP_JUMPER) &&
+            (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_OVERCURRENT))
+        {
+            UpdateTIMSync (0);
+            d = 0;
+            last_d = 0;
+            timer_standby = 300;    //doy minimo 300ms para reactivar
+            main_state = MAIN_JUMPER_PROTECTED;
+        }
 
         if (!timer_standby)
         {
@@ -309,7 +312,10 @@ int main(void)
             timer_filters = 3;
             vin_vector[0] = Vin_Sense;
             vin_filtered = MAFilter8(vin_vector);
-            dmax = UpdateDMAX(vin_filtered);
+            if (main_state == MAIN_SOFT_START)
+                dmax = UpdateDMAXSF(vin_filtered);
+            else
+                dmax = UpdateDMAX(vin_filtered);
         }
 
         if (current_excess)

@@ -32,8 +32,8 @@ short d_last = 0;
 #define KDV	0			// 0
 
 //todos se dividen por 128
-#define KPI	32			// 0
-#define KII	8			// 0.25
+#define KPI	32			// 0.25
+#define KII	8			// 0.0625 error maximo 16 puntos
 #define KDI	0			// 0
 
 
@@ -249,7 +249,7 @@ short PID_roof (short setpoint, short sample, short local_last_d, short * e_z1, 
 	error = setpoint - sample;
 
 	//K1
-	acc = K1I * error;		//5500 / 32768 = 0.167 errores de hasta 6 puntos
+	acc = K1I * error;
 	val_k1 = acc >> 7;
 
 	//K2

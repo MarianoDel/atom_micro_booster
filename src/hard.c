@@ -116,5 +116,22 @@ unsigned short UpdateDMAX (unsigned short a)
     return a;
 }
 
+unsigned short UpdateDMAXSF (unsigned short a)
+{
+    //por saturacion en arranque cambio max D
+    if (a > VIN_35V)
+        a = 50;
+    else if (a > VIN_30V)
+        a = 70;
+    else if (a > VIN_25V)
+        a = 90;
+    else if (a > VIN_20V)
+        a = 120;
+    else
+        a = 150;
+
+    return a;
+}
+
 
 //---- end of file ----//
