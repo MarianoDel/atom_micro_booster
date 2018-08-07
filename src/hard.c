@@ -31,6 +31,13 @@ unsigned char blink = 0;
 unsigned char how_many_blinks = 0;
 
 
+#define STRING2(x) #x
+#define STRING(x) STRING2(x)
+// #define STRING_CONCAT(str1,str2) #str1 " " #str2
+// #pragma message "Corriente para calculos"
+// #pragma message(STRING_CONCAT("Corriente para calculos",I_FOR_CALC))
+// #pragma message(STRING_CONCAT("Corriente para calculos",STRING(I_FOR_CALC)))
+#pragma message(STRING(I_FOR_CALC))
 
 /* Module Functions ------------------------------------------------------------*/
 
@@ -133,5 +140,84 @@ unsigned short UpdateDMAXSF (unsigned short a)
     return a;
 }
 
+//Calcula en funcion de la tension aplicada a la bobina Lout
+//el maxido d en ticks posible. Utiliza Imax (entrada o salida), Lout, tick_pwm
+unsigned short UpdateDmaxLout (unsigned short delta_voltage)
+{
+    unsigned int num, den;
+
+    if (delta_voltage > 0)
+    {
+        // num = I_FOR_CALC * LOUT_UHY * 1000;    //cambio para no tener decimales en el preprocesador
+        num = I_FOR_CALC_MILLIS * LOUT_UHY;    
+        den = delta_voltage * TICK_PWM_NS;
+        num = num / den;
+
+        if (num > DMAX_HARDWARE)
+            num = DMAX_HARDWARE;
+    }
+    else
+        num = DMAX_HARDWARE;
+
+    return (unsigned short) num;
+}
+
+//Convierte el valor de ticks ADC Vout a tension
+unsigned short VoutTicksToVoltage (unsigned short sample_adc)
+{
+    unsigned int num;
+
+    if (sample_adc > VOUT_300V)
+    {
+        num = sample_adc * 350;
+        num = num / VOUT_350V;
+    }
+    else if (sample_adc > VOUT_200V)
+    {
+        num = sample_adc * 300;
+        num = num / VOUT_300V;
+    }
+    else if (sample_adc > VOUT_110V)
+    {
+        num = sample_adc * 200;
+        num = num / VOUT_200V;
+    }
+    else
+    {
+        num = sample_adc * 110;
+        num = num / VOUT_110V;
+    }
+    
+    return (unsigned short) num;
+}
+
+//Convierte el valor de ticks ADC Vin a tension
+unsigned short VinTicksToVoltage (unsigned short sample_adc)
+{
+    unsigned int num;
+
+    if (sample_adc > VIN_30V)
+    {
+        num = sample_adc * 35;
+        num = num / VIN_35V;
+    }
+    else if (sample_adc > VIN_25V)
+    {
+        num = sample_adc * 30;
+        num = num / VIN_30V;
+    }
+    else if (sample_adc > VIN_20V)
+    {
+        num = sample_adc * 25;
+        num = num / VIN_25V;
+    }    
+    else
+    {
+        num = sample_adc * 20;
+        num = num / VIN_20V;
+    }
+    
+    return (unsigned short) num;
+}
 
 //---- end of file ----//

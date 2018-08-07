@@ -53,7 +53,7 @@ volatile unsigned short take_temp_sample = 0;
 
 // ------- Definiciones para los filtros -------
 #define SIZEOF_FILTER    8
-#define UNDERSAMPLING_TICKS    10
+#define UNDERSAMPLING_TICKS    50
 unsigned short vin_vector [SIZEOF_FILTER];
 // unsigned short vbatt [SIZEOF_FILTER];
 // unsigned short iboost [SIZEOF_FILTER];
@@ -66,7 +66,7 @@ volatile unsigned char current_excess = 0;
 short d = 0;
 short ez1 = 0;
 short ez2 = 0;
-unsigned short dmax = 0;
+// unsigned short dmax = 0;
 unsigned short last_d = 0;
 #define DELTA_D    2
 
@@ -117,7 +117,17 @@ int main(void)
     main_state_t main_state = MAIN_INIT;
     unsigned short vin_filtered = 0;
 
-    char s_lcd [100];		
+#ifdef TEST_FIXED_VOUT    
+    unsigned short dmax_in = 0, dmax_lout = 0;
+    unsigned int delta_vout = 0;
+    unsigned short normalized_vout = 0;
+#endif
+
+#ifdef TEST_FIXED_D
+    unsigned char stopped = 0;
+#endif
+    
+    char s_lcd [120];		
 
     //GPIO Configuration.
     GPIO_Config();
@@ -218,7 +228,11 @@ int main(void)
                 UpdateTIMSync(0);
                 d = 0;
                 last_d = 0;
-                dmax = 0;
+                // dmax = 0;
+                dmax_in = 0;
+                dmax_lout = 0;
+                ez1 = 0;
+                ez2 = 0;
                 EXTIOn();
                 main_state = MAIN_SOFT_START;
             }
@@ -230,7 +244,29 @@ int main(void)
                 sequence_ready_reset;
 
                 if (undersampling < (UNDERSAMPLING_TICKS - 1))
+                {                    
+                    if (undersampling == (UNDERSAMPLING_TICKS - 2))
+                    {
+                        delta_vout = VinTicksToVoltage(Vin_Sense);                        
+                        delta_vout = (delta_vout * N_TRAFO) / 1000;
+
+                        normalized_vout = VoutTicksToVoltage(Vout_Sense);
+
+                        if (delta_vout > normalized_vout)
+                            delta_vout = delta_vout - normalized_vout;
+                        else
+                            delta_vout = 0;
+
+                        dmax_lout = UpdateDmaxLout((unsigned short)delta_vout);
+
+                        
+                        // delta_vout = MAX_VOUT - Vout_Sense;
+                        // delta_vout = VoutTicksToVoltage (delta_vout);
+                        // dmax_lout = UpdateDmaxLout (delta_vout);                        
+                    }
+                    
                     undersampling++;
+                }
                 else
                 {
                     undersampling = 0;
@@ -239,16 +275,38 @@ int main(void)
                     // d = PID_roof (VOUT_200V, Vout_Sense, d, &ez1, &ez2);                    
                     
                     if (d < 0)
+                    {
                         d = 0;
+                        ez1 = 0;
+                        ez2 = 0;
+                    }
 
-                    if (d > dmax)
-                        d = dmax;
+                    if (dmax_in > dmax_lout)
+                    {
+                        if (d > dmax_lout)
+                        {
+                            d = dmax_lout;
+                            ez1 = 0;
+                            ez2 = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (d > dmax_in)
+                        {
+                            d = dmax_in;
+                            ez1 = 0;
+                            ez2 = 0;
+                        }
+                    }
 
-                    //derivativo exterior DELTA solo cuando incremeta
+                    //derivativo exterior DELTA solo cuando incrementa
                     if (d > (last_d + DELTA_D))
                     {
                         d = last_d + DELTA_D;
                         last_d = d;
+                        ez1 = 0;
+                        ez2 = 0;
                     }
                     else
                         last_d = d;
@@ -302,7 +360,11 @@ int main(void)
         if (!timer_standby)
         {
             timer_standby = 2000;
-            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax: %d\n", vin_filtered, Vout_Sense, d, dmax);
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_in: %d, dmax_lout: %d\n",
+                     vin_filtered,
+                     Vout_Sense,
+                     d, dmax_in, dmax_lout);
+            
             Usart1Send(s_lcd);
         }
 
@@ -312,10 +374,10 @@ int main(void)
             timer_filters = 3;
             vin_vector[0] = Vin_Sense;
             vin_filtered = MAFilter8(vin_vector);
-            if (main_state == MAIN_SOFT_START)
-                dmax = UpdateDMAXSF(vin_filtered);
-            else
-                dmax = UpdateDMAX(vin_filtered);
+            // if (main_state == MAIN_SOFT_START)
+            //     dmax_in = UpdateDMAXSF(vin_filtered);
+            // else
+                dmax_in = UpdateDMAX(vin_filtered);
         }
 
         if (current_excess)
@@ -348,7 +410,8 @@ int main(void)
     DMA1_Channel1->CCR |= DMA_CCR_EN;
 
     ADC1->CR |= ADC_CR_ADSTART;
-    UpdateTIMSync (25);
+    EXTIOn();
+    // UpdateTIMSync (25);
 
     while (1)
     {
@@ -361,10 +424,32 @@ int main(void)
                 LED_ON;
         }
 
+        if (STOP_JUMPER)
+        {
+            if (!stopped)
+            {
+                UpdateTIMSync (0);
+                d = 0;
+                stopped = 1;
+                Usart1Send("Stopped!\n");
+                timer_standby = 1000;
+            }
+        }
+        else
+        {
+            if ((stopped) && (!timer_standby))
+            {
+                Usart1Send("Starting...\n");
+                stopped = 0;
+                d = D_FOR_FIXED;
+                UpdateTIMSync (d);
+            }
+        }
+
         if (!timer_standby)
         {
             timer_standby = 2000;
-            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax: %d\n", vin_filtered, Vout_Sense, d, dmax);
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d\n", vin_filtered, Vout_Sense, d);
             Usart1Send(s_lcd);
         }
 
@@ -374,7 +459,6 @@ int main(void)
             timer_filters = 3;
             vin_vector[0] = Vin_Sense;
             vin_filtered = MAFilter8(vin_vector);
-            dmax = UpdateDMAX(vin_filtered);
         }
 
         if (current_excess)

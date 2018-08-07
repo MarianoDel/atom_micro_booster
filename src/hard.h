@@ -91,9 +91,34 @@
 #define VIN_20V    561    //1.81V
 
 // #define VOUT_200V    415
+#define VOUT_110V    151    //ajustado 05-08-18
 #define VOUT_200V    386    //ajustado 24-07-18
 #define VOUT_300V    660    //ajustado 24-07-18
 #define VOUT_350V    802    //ajustado 24-07-18
+
+//Caracteristicas de la bobina de salida
+#define LOUT_UHY    130    //DINL2
+#define ILOUT       3      //DINL2 corriente un poco menor a la que satura el inductor
+#define TICK_PWM_NS 21
+#define N_TRAFO     18300
+#define IMAX_INPUT  25
+#define MAX_VOUT    830    //830 -> 362V tension maxima que sale del trafo en puntos ADC
+
+#if ((ILOUT * N_TRAFO) > (IMAX_INPUT * 1000))
+#define I_FOR_CALC_MILLIS (IMAX_INPUT * 1000 * 1000 / N_TRAFO)
+#define I_FOR_CALC (IMAX_INPUT * 1000 / N_TRAFO)
+#else
+#define I_FOR_CALC_MILLIS (ILOUT * 1000 * 1000)
+#define I_FOR_CALC (IMAX_INPUT * 1000)
+#endif
+
+
+
+#define DMAX_HARDWARE    450
+
+#ifdef TEST_FIXED_D
+#define D_FOR_FIXED    20
+#endif
 
 //------- PIN CONFIG ----------------------
 #ifdef VER_1_1
@@ -247,5 +272,8 @@ void ChangeLed (unsigned char);
 void UpdateLed (void);
 unsigned short UpdateDMAX (unsigned short);
 unsigned short UpdateDMAXSF (unsigned short);
-
+unsigned short UpdateDmaxLout (unsigned short);
+unsigned short VoutTicksToVoltage (unsigned short);
+unsigned short VinTicksToVoltage (unsigned short);
+    
 #endif /* HARD_H_ */
