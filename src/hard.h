@@ -13,8 +13,8 @@
 
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
-// #define VER_1_0
-#define VER_1_1		//cambia pinout respecto VER_1_0
+#define VER_1_0
+// #define VER_1_1		//cambia pinout respecto VER_1_0
 
 //---- Configuration for Hardware Versions -------
 #ifdef VER_1_1
@@ -29,11 +29,20 @@
 
 //---- Features Configuration ----------------
 // #define DEBUG_ON
+
+// SOFT para VERSIONES V1_1
+#ifdef VER_1_1
 // #define PRODUCTION_PRGRM
 // #define TEST_INT_PRGRM
 // #define TEST_ADC_AND_DMA
 // #define TEST_FIXED_D
 #define TEST_FIXED_VOUT
+#endif
+
+// SOFT para VERSIONES V1_0
+#ifdef VER_1_0
+#define ONLY_COMMS
+#endif
 
 
 //------ Configuration for Firmware-Channels -----
@@ -75,6 +84,9 @@
 #ifdef TEST_FIXED_VOUT
 #define FEATURES "Programa Vout fijo\n"
 #endif
+#ifdef ONLY_COMMS
+#define FEATURES "Only Communications for Ver 1.0\n"
+#endif
 
 
 
@@ -112,7 +124,7 @@
 #define I_FOR_CALC (IMAX_INPUT * 1000)
 #endif
 
-
+#define VOUT_SOFT_START    VOUT_110V
 
 #define DMAX_HARDWARE    450
 
@@ -210,7 +222,7 @@
 #define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
 
 //GPIOB pin7	NC
- #endif	//VER_1_0
+#endif	//VER_1_0
 //------- END OF PIN CONFIG -------------------
 
 

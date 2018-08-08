@@ -164,7 +164,7 @@ void GPIO_Config (void)
 
     temp = GPIOA->MODER;	//2 bits por pin
     temp &= 0x3FC0CFC0;		//PA0 PA1 PA2 analog input; PA6 alternate function;
-    //PA8 PA9 PA10 alternative function; PA15 out
+                                //PA8 PA9 PA10 alternative function; PA15 out
     // temp |= 0x402A201F;		//para pruebas de PA2
     // temp |= 0x4029203F;		//para pruebas PA8
     temp |= 0x402A203F;		//original
@@ -251,7 +251,7 @@ void GPIO_Config (void)
         SYSCFG_CLK_ON;
 
     SYSCFG->EXTICR[0] = 0x00000001; //Select Port B & Pin 1 external interrupt
-    EXTI->IMR |= 0x00000001; 			//Corresponding mask bit for interrupts EXTI0
+    // EXTI->IMR |= 0x00000001; 			//Corresponding mask bit for interrupts EXTI0
     EXTI->EMR |= 0x00000000; 			//Corresponding mask bit for events
     EXTI->RTSR |= 0x00000000; 			//Pin 0 Interrupt line on rising edge
     EXTI->FTSR |= 0x00000001; 			//Pin 0 Interrupt line on falling edge

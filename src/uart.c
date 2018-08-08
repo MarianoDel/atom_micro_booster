@@ -158,29 +158,29 @@ void Usart1SendSingle(unsigned char tosend)
 
 void USART1Config(void)
 {
-	unsigned int temp;
+    unsigned int temp;
 
-	if (!USART1_CLK)
-		USART1_CLK_ON;
+    if (!USART1_CLK)
+        USART1_CLK_ON;
 
 
-	ptx1 = tx1buff;
-	ptx1_pckt_index = tx1buff;
-	prx1 = rx1buff;
+    ptx1 = tx1buff;
+    ptx1_pckt_index = tx1buff;
+    prx1 = rx1buff;
 
-	USART1->BRR = USART_9600;
+    USART1->BRR = USART_9600;
 //	USART1->CR2 |= USART_CR2_STOP_1;	//2 bits stop
 //	USART1->CR1 = USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;
 //	USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_UE;	//SIN TX
-	USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;	//para pruebas TX
+    USART1->CR1 = USART_CR1_RXNEIE | USART_CR1_RE | USART_CR1_TE | USART_CR1_UE;	//para pruebas TX
 
-	temp = GPIOA->AFR[1];
-	temp &= 0xFFFFF00F;
-	temp |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
-	GPIOA->AFR[1] = temp;
+    temp = GPIOA->AFR[1];
+    temp &= 0xFFFFF00F;
+    temp |= 0x00000110;	//PA10 -> AF1 PA9 -> AF1
+    GPIOA->AFR[1] = temp;
 
-	NVIC_EnableIRQ(USART1_IRQn);
-	NVIC_SetPriority(USART1_IRQn, 5);
+    NVIC_EnableIRQ(USART1_IRQn);
+    NVIC_SetPriority(USART1_IRQn, 5);
 }
 
 

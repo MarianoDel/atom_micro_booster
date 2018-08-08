@@ -91,7 +91,7 @@ void TimingDelay_Decrement (void);
 void Overcurrent_Shutdown (void);
 
 #ifdef VER_1_1
-// ------- para el LM311 -------
+// ------- para el LM393N -------
 extern void EXTI4_15_IRQHandler(void);
 #endif
 
@@ -126,6 +126,10 @@ int main(void)
 #ifdef TEST_FIXED_D
     unsigned char stopped = 0;
 #endif
+
+#ifdef ONLY_COMMS
+    unsigned short dmax_in = 0;
+#endif
     
     char s_lcd [120];		
 
@@ -153,7 +157,7 @@ int main(void)
 
     //--- Leo los parametros de memoria ---//
 
-    // hile (1)
+    // while (1)
     // {
     //  if (STOP_JUMPER)
     //  {
@@ -172,7 +176,19 @@ int main(void)
 
 
 //---------- Pruebas de Hardware --------//
-    EXTIOff ();    
+    EXTIOff ();
+
+    // while (1)
+    // {
+    //     if (LED)
+    //         LED_OFF;
+    //     else
+    //         LED_ON;
+        
+    //     Wait_ms (250);
+
+    // }
+
     USART1Config();
     
     //---- Welcome Code ------------//
@@ -196,7 +212,72 @@ int main(void)
     Wait_ms(100);
 #endif
 
+//---------- Test ONLY_COMMS VER_1_0 --------//    
+#ifdef ONLY_COMMS
 
+    // while (1)
+    // {
+    //     if (LED)
+    //         LED_OFF;
+    //     else
+    //         LED_ON;
+        
+    //     Wait_ms (250);
+
+    // }
+
+    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
+    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+
+
+    while (1)
+    {
+        if (sequence_ready)
+            sequence_ready_reset;
+        
+        //Cosas que no tienen tanto que ver con las muestras o el estado del programa
+        if ((STOP_JUMPER) &&
+            (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_OVERCURRENT))
+        {
+            UpdateTIMSync (0);
+            d = 0;
+            last_d = 0;
+            timer_standby = 300;    //doy minimo 300ms para reactivar
+            main_state = MAIN_JUMPER_PROTECTED;
+        }
+
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_in: %d\n",
+                     vin_filtered,
+                     Vout_Sense,
+                     d, dmax_in);
+            
+            Usart1Send(s_lcd);
+        }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            dmax_in = UpdateDMAX(vin_filtered);
+        }
+    }    //end of while 1
+#endif
+//---------- Fin Test ONLY_COMMS VER_1_0 --------//
+        
 //---------- Test FIXED VOUT VER_1_1 --------//
     //poner y quitar el jumper me recupera del overcurrent
 #ifdef TEST_FIXED_VOUT
@@ -312,8 +393,53 @@ int main(void)
                         last_d = d;
                                                 
                     UpdateTIMSync (d);
+
+                    if (Vout_Sense > VOUT_SOFT_START)
+                        main_state = MAIN_GENERATING;
                 }
             }    //cierra sequence
+            break;
+
+        case MAIN_GENERATING:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+                
+                if (undersampling < (UNDERSAMPLING_TICKS - 1))
+                {
+                    undersampling++;
+                }
+                else
+                {
+                    undersampling = 0;
+                    d = PID_roof (VOUT_350V, Vout_Sense, d, &ez1, &ez2);
+                    
+                    if (d < 0)
+                    {
+                        d = 0;
+                        ez1 = 0;
+                        ez2 = 0;
+                    }
+
+                    if (d > dmax_in)
+                    {
+                        d = dmax_in;
+                    }
+
+                    //derivativo exterior DELTA solo cuando incrementa
+                    if (d > (last_d + DELTA_D))
+                    {
+                        d = last_d + DELTA_D;
+                        last_d = d;
+                        ez1 = 0;
+                        ez2 = 0;
+                    }
+                    else
+                        last_d = d;
+
+                    UpdateTIMSync (d);
+                }
+            }            
             break;
 
         case MAIN_JUMPER_PROTECTED:
