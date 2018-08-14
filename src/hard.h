@@ -7,16 +7,21 @@
 // ##
 // #### DSP.H ################################
 //---------------------------------------------
-#ifndef HARD_H_
-#define HARD_H_
+#ifndef _HARD_H_
+#define _HARD_H_
 
 
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
-#define VER_1_0
+// #define VER_1_0
 // #define VER_1_1		//cambia pinout respecto VER_1_0
+#define VER_1_2
 
 //---- Configuration for Hardware Versions -------
+#ifdef VER_1_2
+#define HARDWARE_VERSION_1_2
+#define SOFTWARE_VERSION_1_2
+#endif
 #ifdef VER_1_1
 #define HARDWARE_VERSION_1_1
 #define SOFTWARE_VERSION_1_1
@@ -30,6 +35,19 @@
 //---- Features Configuration ----------------
 // #define DEBUG_ON
 
+// SOFT para VERSIONES V1_2
+#ifdef VER_1_2
+// Tipos de Programas 
+#define CURRENT_MODE_VER_1_2
+// #define TEST_FIXED_D
+// #define TEST_FIXED_VOUT
+
+// Tipos de Hardware Utilizado
+#define WITH_OVERCURRENT_SHUTDOWN
+#define WITH_TIM14_FB
+// #define WITH_TIM1_FB
+#endif
+
 // SOFT para VERSIONES V1_1
 #ifdef VER_1_1
 // #define PRODUCTION_PRGRM
@@ -41,7 +59,8 @@
 
 // SOFT para VERSIONES V1_0
 #ifdef VER_1_0
-#define ONLY_COMMS
+// #define ONLY_COMMS
+#define CURRENT_MODE_VER_1_0
 #endif
 
 
@@ -50,9 +69,15 @@
 
 //---- End of Features Configuration ----------
 
-
+//--- Stringtify Utils -----------------------
+#define STRING_CONCAT(str1,str2) #str1 " " #str2
+#define xstr(s) str(s)
+#define str(s) #s
 
 //--- Hardware Welcome Code ------------------//
+#ifdef HARDWARE_VERSION_1_2
+#define HARD "Hardware V: 1.2\n"
+#endif
 #ifdef HARDWARE_VERSION_1_1
 #define HARD "Hardware V: 1.1\n"
 #endif
@@ -87,6 +112,23 @@
 #ifdef ONLY_COMMS
 #define FEATURES "Only Communications for Ver 1.0\n"
 #endif
+#ifdef CURRENT_MODE_VER_1_0
+#define FEATURES "Current Mode for Hwd ver 1.0\n"
+#endif
+#ifdef CURRENT_MODE_VER_1_2
+#define FEATURES_0 "Current Mode for Hwd ver 1.2\n"
+#endif
+#ifdef WITH_OVERCURRENT_SHUTDOWN
+#define FEATURES_1 STRING_CONCAT(WITH_OVERCURRENT_SHUTDOWN,\n)
+#endif
+#ifdef WITH_TIM14_FB
+#define FEATURES_2 STRING_CONCAT(WITH_TIM14_FB,\n)
+#endif
+#ifdef WITH_TIM1_FB
+#define FEATURES_3 STRING_CONCAT(WITH_TIM1_FB,\n)
+#endif
+
+
 
 
 
@@ -133,6 +175,55 @@
 #endif
 
 //------- PIN CONFIG ----------------------
+#ifdef VER_1_2
+//GPIOA pin0	Vin_Sense
+//GPIOA pin1	Vout_Sense
+//GPIOA pin2	I_Sense
+
+//GPIOA pin3	NC
+
+//GPIOA pin4	
+#define PROT_MOS	((GPIOA->IDR & 0x0010) == 0)
+
+//GPIOA pin5
+#define PROT_OVERCURRENT ((GPIOA->IDR & 0x0020) == 0)
+
+//GPIOA pin6	para TIM3_CH1 (MOSFET_A)
+
+//GPIOA pin7	SENSE_MOSFET_A
+#define SENSE_MOSFET_A ((GPIOA->IDR & 0x0080) != 0)
+
+//GPIOB pin0    NC
+
+//GPIOB pin1	para TIM14_CH1
+
+//GPIOA pin8	para TIM1_CH1 (MOSFET_B)
+
+//GPIOA pin9
+//GPIOA pin10	usart1 tx rx
+
+//GPIOA pin11	SENSE_MOSFET_B
+#define SENSE_MOSFET_B ((GPIOA->IDR & 0x0800) != 0)
+
+//GPIOA pin12	NC
+//GPIOA pin13	NC
+//GPIOA pin14	NC
+
+//GPIOA pin15
+#define LED ((GPIOA->ODR & 0x8000) != 0)
+#define LED_ON	GPIOA->BSRR = 0x00008000
+#define LED_OFF GPIOA->BSRR = 0x80000000
+
+//GPIOB pin3	NC
+//GPIOB pin4	NC
+//GPIOB pin5	NC
+
+//GPIOB pin6
+#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
+
+//GPIOB pin7	NC
+#endif	//VER_1_2
+
 #ifdef VER_1_1
 //GPIOA pin0	Vin_Sense
 //GPIOA pin1	Vout_Sense
@@ -188,18 +279,22 @@
 //GPIOA pin4	NC
 //GPIOA pin5	NC
 
-//GPIOA pin6	para TIM3_CH1
+//GPIOA pin6	para TIM3_CH1 (CTRL_M_A)
+#define CTRL_M_A ((GPIOA->ODR & 0x0040) != 0)
+
 //GPIOA pin7	NC
 
 //GPIOB pin0
 #define OVERCURRENT	((GPIOB->IDR & 0x0001) == 0)
 
-//GPIOB pin1	TIM14_CH1 o TIM3_CH4
+//GPIOB pin1	TIM14_CH1 o TIM3_CH4 o TIM1_CH3N
+#define FB       ((GPIOB->ODR & 0x0002) != 0)
+#define FB_ON    GPIOB->BSRR = 0x00000002
+#define FB_OFF   GPIOB->BSRR = 0x00020000
 
-//GPIOA pin8	para TIM1_CH1
-// #define CTRL_M_B_ON	GPIOA->BSRR = 0x00000100
-// #define CTRL_M_B_OFF GPIOA->BSRR = 0x01000000
 
+//GPIOA pin8	para TIM1_CH1 (CTRL_M_B)
+#define CTRL_M_B ((GPIOA->ODR & 0x01000) != 0)
 
 //GPIOA pin9
 //GPIOA pin10	usart1 tx rx
@@ -288,4 +383,4 @@ unsigned short UpdateDmaxLout (unsigned short);
 unsigned short VoutTicksToVoltage (unsigned short);
 unsigned short VinTicksToVoltage (unsigned short);
     
-#endif /* HARD_H_ */
+#endif /* _HARD_H_ */

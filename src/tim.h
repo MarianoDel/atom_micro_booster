@@ -12,8 +12,10 @@
 
 //--- Exported types ---//
 //--- Exported constants ---//
+#define DUTY_10_PERCENT		100
 #define DUTY_50_PERCENT		500
-#define DUTY_100_PERCENT		1000
+#define DUTY_100_PERCENT        1000
+#define DUTY_FOR_DMAX           450
 
 #define ENABLE_TIM1			TIM1->CR1 |= TIM_CR1_CEN;
 #define DISABLE_TIM1			TIM1->CR1 &= ~TIM_CR1_CEN;
@@ -52,10 +54,23 @@
 #define RCC_TIM17_CLK_ON 	RCC->APB2ENR |= 0x00040000
 #define RCC_TIM17_CLK_OFF 	RCC->APB2ENR &= ~0x00040000
 
+
+//--- Exported wrapped functions ---//
+#define UpdateFB(X)    Update_TIM1_CH3(X)
+
 //--- Exported functions ---//
 void UpdateTIMSync (unsigned short);
+void UpdateTIM_MosfetA (unsigned short);
+void UpdateTIM_MosfetB (unsigned short);
+
+void EnablePreload_MosfetA (void);
+void EnablePreload_MosfetB (void);
+void DisablePreload_MosfetA (void);
+void DisablePreload_MosfetB (void);
+
 void TIM_1_Init(void);
 void Update_TIM1_CH1 (unsigned short);
+void Update_TIM1_CH3 (unsigned short);
 void TIM3_IRQHandler (void);
 void TIM_3_Init(void);
 void TIM_6_Init (void);

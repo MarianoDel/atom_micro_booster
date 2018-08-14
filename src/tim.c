@@ -28,11 +28,49 @@ volatile unsigned short timer_1000 = 0;
 
 
 //--- FUNCIONES DEL MODULO ---//
-void UpdateTIMSync (unsigned short a)
+inline void UpdateTIMSync (unsigned short a)
 {
     //primero cargo TIM1
     TIM1->CCR1 = a;
     TIM3->ARR = DUTY_50_PERCENT + a;    //TIM3->CCR1 es el delay entre timers
+                                        //lo cargo en el timer init
+}
+
+inline void UpdateTIM_MosfetA (unsigned short a)
+{
+    TIM3->ARR = DUTY_50_PERCENT + a;    
+}
+
+inline void UpdateTIM_MosfetB (unsigned short a)
+{
+    TIM1->CCR1 = a;
+}
+
+inline void EnablePreload_MosfetA (void)
+{
+    // TIM3->CCMR1 |= TIM_CCMR1_OC1PE;
+    TIM3->CR1 |= TIM_CR1_ARPE;
+}
+
+inline void DisablePreload_MosfetA (void)
+{
+    // TIM3->CCMR1 &= ~TIM_CCMR1_OC1PE;
+    TIM3->CR1 &= ~TIM_CR1_ARPE;    
+}
+
+inline void EnablePreload_MosfetB (void)
+{
+    TIM1->CCMR1 |= TIM_CCMR1_OC1PE;
+}
+
+inline void DisablePreload_MosfetB (void)
+{
+    TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE;
+}
+
+void Update_TIM1_CH3 (unsigned short a)
+{
+    TIM1->CCR3 = a;
 }
 
 void Update_TIM3_CH1 (unsigned short a)
@@ -86,19 +124,52 @@ void TIM_1_Init (void)
     //TIM1->CR2 = 0x00;
     //TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
     TIM1->SMCR = 0x0000;
-    //TIM1->CCMR1 = 0x6000;            //CH2 output PWM mode 1
-    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
-    TIM1->CCMR2 = 0x0000;
-    //  TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;
+
+#ifdef VER_1_2
+#ifdef WITH_TIM1_FB
+    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
+    TIM1->CCMR2 = 0x0060;            //CH3 output PWM mode 1
+    TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3E | TIM_CCER_CC3P;    //el pin es TIM1_CH3N    
+#else    
+    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
+    TIM1->CCMR2 = 0x0000;            //
     TIM1->CCER |= TIM_CCER_CC1E;
+#endif
+#endif
+
+#ifdef VER_1_1
+    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
+    TIM1->CCMR2 = 0x0000;            //
+    TIM1->CCER |= TIM_CCER_CC1E;
+#endif
+    
+#ifdef VER_1_0
+    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
+    TIM1->CCMR2 = 0x0060;            //CH3 output PWM mode 1
+    TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3E | TIM_CCER_CC3P;
+#endif    
+    
     TIM1->BDTR |= TIM_BDTR_MOE;
     // TIM1->ARR = 1023;                //cada tick 20.83ns
     TIM1->ARR = DUTY_100_PERCENT;                //cada tick 20.83ns
 
-
     TIM1->CNT = 0;
     TIM1->PSC = 0;
 
+#ifdef VER_1_2
+#ifdef WITH_TIM1_FB
+    temp = GPIOB->AFR[0];
+    temp &= 0xFFFFFF0F;
+    temp |= 0x00000020;    //PB1 -> AF2
+    GPIOB->AFR[0] = temp;
+#endif
+    temp = GPIOA->AFR[1];
+    temp &= 0xFFFFFFF0;
+    temp |= 0x00000002;    //PA8 -> AF2
+    GPIOA->AFR[1] = temp;
+#endif
+
+#ifdef VER_1_1
     //Configuracion Pines
     //Alternate Fuction
     //  temp = GPIOA->MODER;    //2 bits por pin
@@ -109,8 +180,22 @@ void TIM_1_Init (void)
     temp = GPIOA->AFR[1];
     temp &= 0xFFFFFFF0;
     temp |= 0x00000002;    //PA8 -> AF2
-    GPIOA->AFR[1] = temp;
+    GPIOA->AFR[1] = temp;    
+#endif
+    
+#ifdef VER_1_0
+    //Alternative function
+    temp = GPIOB->AFR[0];
+    temp &= 0xFFFFFF0F;
+    temp |= 0x00000020;    //PB1 -> AF2
+    GPIOB->AFR[0] = temp;
 
+    temp = GPIOA->AFR[1];
+    temp &= 0xFFFFFFF0;
+    temp |= 0x00000002;    //PA8 -> AF2
+    GPIOA->AFR[1] = temp;
+#endif
+    
     // Enable timer ver UDIS
     //TIM1->DIER |= TIM_DIER_UIE;
     TIM1->CR1 |= TIM_CR1_CEN;

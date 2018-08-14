@@ -90,7 +90,7 @@ volatile unsigned char timer_filters = 0;
 void TimingDelay_Decrement (void);
 void Overcurrent_Shutdown (void);
 
-#ifdef VER_1_1
+#if defined VER_1_1 || defined VER_1_2
 // ------- para el LM393N -------
 extern void EXTI4_15_IRQHandler(void);
 #endif
@@ -111,7 +111,8 @@ extern void EXTI0_1_IRQHandler(void);
 //------------------------------------------//
 int main(void)
 {
-    unsigned char i, ii;
+    unsigned char i;
+    unsigned short ii;
 
     unsigned char undersampling = 0;
     main_state_t main_state = MAIN_INIT;
@@ -177,18 +178,6 @@ int main(void)
 
 //---------- Pruebas de Hardware --------//
     EXTIOff ();
-
-    // while (1)
-    // {
-    //     if (LED)
-    //         LED_OFF;
-    //     else
-    //         LED_ON;
-        
-    //     Wait_ms (250);
-
-    // }
-
     USART1Config();
     
     //---- Welcome Code ------------//
@@ -207,24 +196,299 @@ int main(void)
 #error	"No Soft Version defined in hard.h file"
 #endif
 
-#ifdef FEATURES
-    Usart1Send((const char *) FEATURES);
+#ifdef FEATURES_0
+    Usart1Send((const char *) FEATURES_0);
     Wait_ms(100);
 #endif
+#ifdef FEATURES_1
+    Usart1Send((const char *) FEATURES_1);
+    Wait_ms(100);
+#endif
+#ifdef FEATURES_2
+    Usart1Send((const char *) FEATURES_2);
+    Wait_ms(100);
+#endif
+#ifdef FEATURES_3
+    Usart1Send((const char *) FEATURES_3);
+    Wait_ms(100);
+#endif
+    
+//---------- Test CURRENT_MODE_VER_1_2 --------//    
+#ifdef CURRENT_MODE_VER_1_2
+    
+    TIM_1_Init ();	   //lo utilizo para mosfet Ctrol_M_B
+    TIM_3_Init ();	   //lo utilizo para mosfet Ctrol_M_A y para synchro ADC
 
+#ifdef WITH_TIM14_FB
+    TIM_14_Init ();        //lo uso para FB
+#endif
+    
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    //--- Prueba HARD pin FB ----------
+    //porbar con WITH_TIM14_FB y WITH_TIM1_FB
+    while (1)
+    {
+        for (ii = 0; ii < DUTY_100_PERCENT; ii++)
+        {
+            UpdateFB(ii);
+            Wait_ms(1);
+        }
+        for (ii = DUTY_100_PERCENT; ii > 0; ii--)
+        {
+            UpdateFB(ii);
+            Wait_ms(1);
+        }
+    }
+    //--- Fin Prueba HARD pin FB ----------
+
+    //--- Prueba HARD pines CTRL_MOSFET ----------
+    UpdateTIMSync (DUTY_FOR_DMAX);
+    while (1);
+    //--- Fin Prueba HARD pines CTRL_MOSFET ----------
+
+    //--- Prueba HARD pines ADC ----------
+    while (1)
+    {
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "Vin: %d, Vout: %d, I: %d\n",
+                     Vin_Sense,
+                     Vout_Sense,
+                     I_Sense);
+            
+            Usart1Send(s_lcd);
+        }
+    }   
+    //--- Fin Prueba HARD pines ADC ----------
+    
+    //este programa tiene dos loops uno de hardware con la corriente pico
+    //otro de soft con la tension de salida
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_INIT:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+                EXTIOn();
+                UpdateTIMSync(DUTY_FOR_DMAX);
+                UpdateFB(DUTY_10_PERCENT);
+                main_state = MAIN_SOFT_START;
+            }
+            break;
+
+        case MAIN_SOFT_START:
+            break;
+
+        case MAIN_GENERATING:
+            break;
+
+        case MAIN_JUMPER_PROTECTED:
+            if (!timer_standby)
+            {
+                if (!STOP_JUMPER)
+                {
+                    //vuelvo a INIT
+                    main_state = MAIN_INIT;
+                }
+            }                
+            break;
+
+        case MAIN_OVERCURRENT:
+            // if ((!PROT_MOS_A) && (!PROT_MOS_B))
+            // {
+            //     if ((!timer_standby) && (STOP_JUMPER))    //solo destrabo si se coloca el Jumper y se quita
+            //     {                                         //en MAIN_JUMPER_PROTECTED
+            //         LED_OFF;
+            //         ENABLE_TIM3;
+            //         ENABLE_TIM1;
+            //         main_state = MAIN_JUMPER_PROTECTED;
+            //     }
+            // }
+            break;
+
+        default:
+            main_state = MAIN_INIT;
+            break;
+        }	//fin switch main_state
+        
+        if (sequence_ready)
+            sequence_ready_reset;
+        
+        //Cosas que no tienen tanto que ver con las muestras o el estado del programa
+        if ((STOP_JUMPER) &&
+            (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_OVERCURRENT))
+        {
+            UpdateTIMSync (0);
+            d = 0;
+            last_d = 0;
+            timer_standby = 300;    //doy minimo 300ms para reactivar
+            main_state = MAIN_JUMPER_PROTECTED;
+        }
+
+        // if (!timer_standby)
+        // {
+        //     timer_standby = 2000;
+        //     sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_in: %d\n",
+        //              vin_filtered,
+        //              Vout_Sense,
+        //              d, dmax_in);
+            
+        //     Usart1Send(s_lcd);
+        // }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            // dmax_in = UpdateDMAX(vin_filtered);
+        }
+    }    //end of while 1
+#endif    //current mode ver 1.2
+//---------- Fin Test CURRENT_MODe_VER_1_2 --------//
+
+//---------- Test CURRENT_MODE_VER_1_0 --------//    
+#ifdef CURRENT_MODE_VER_1_0
+
+    TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B, y pin FB
+    TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    AdcConfig();
+
+    //-- DMA configuration.
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    while (1)
+    {
+        if (FB)
+            FB_OFF;
+        else
+            FB_ON;
+        Wait_ms (100);
+    }
+    
+    while (1)
+    {
+        for (ii = 0; ii < DUTY_100_PERCENT; ii++)
+        {
+            UpdateFB(ii);
+            Wait_ms(1);
+        }
+        for (ii = DUTY_100_PERCENT; ii > 0; ii--)
+        {
+            UpdateFB(ii);
+            Wait_ms(1);
+        }
+    }
+    
+    //este programa tiene dos loops uno de hardware con la corriente pico
+    //otro de soft con la tension de salida
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_INIT:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+                EXTIOn();
+                UpdateTIMSync(DUTY_FOR_DMAX);
+                UpdateFB(DUTY_10_PERCENT);
+                main_state = MAIN_SOFT_START;
+            }
+            break;
+
+        case MAIN_SOFT_START:
+            break;
+
+        case MAIN_GENERATING:
+            break;
+
+        case MAIN_JUMPER_PROTECTED:
+            if (!timer_standby)
+            {
+                if (!STOP_JUMPER)
+                {
+                    //vuelvo a INIT
+                    main_state = MAIN_INIT;
+                }
+            }                
+            break;
+
+        case MAIN_OVERCURRENT:
+            // if ((!PROT_MOS_A) && (!PROT_MOS_B))
+            // {
+            //     if ((!timer_standby) && (STOP_JUMPER))    //solo destrabo si se coloca el Jumper y se quita
+            //     {                                         //en MAIN_JUMPER_PROTECTED
+            //         LED_OFF;
+            //         ENABLE_TIM3;
+            //         ENABLE_TIM1;
+            //         main_state = MAIN_JUMPER_PROTECTED;
+            //     }
+            // }
+            break;
+
+        default:
+            main_state = MAIN_INIT;
+            break;
+        }	//fin switch main_state
+        
+        if (sequence_ready)
+            sequence_ready_reset;
+        
+        //Cosas que no tienen tanto que ver con las muestras o el estado del programa
+        if ((STOP_JUMPER) &&
+            (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_OVERCURRENT))
+        {
+            UpdateTIMSync (0);
+            d = 0;
+            last_d = 0;
+            timer_standby = 300;    //doy minimo 300ms para reactivar
+            main_state = MAIN_JUMPER_PROTECTED;
+        }
+
+        // if (!timer_standby)
+        // {
+        //     timer_standby = 2000;
+        //     sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_in: %d\n",
+        //              vin_filtered,
+        //              Vout_Sense,
+        //              d, dmax_in);
+            
+        //     Usart1Send(s_lcd);
+        // }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            // dmax_in = UpdateDMAX(vin_filtered);
+        }
+    }    //end of while 1
+#endif    //current mode
+//---------- Fin Test CURRENT_MODe_VER_1_0 --------//
+    
 //---------- Test ONLY_COMMS VER_1_0 --------//    
 #ifdef ONLY_COMMS
-
-    // while (1)
-    // {
-    //     if (LED)
-    //         LED_OFF;
-    //     else
-    //         LED_ON;
-        
-    //     Wait_ms (250);
-
-    // }
 
     TIM_1_Init ();					//lo utilizo para mosfet Ctrol_M_B,
     TIM_3_Init ();					//lo utilizo para mosfet Ctrol_M_A y para synchro ADC
@@ -277,7 +541,7 @@ int main(void)
     }    //end of while 1
 #endif
 //---------- Fin Test ONLY_COMMS VER_1_0 --------//
-        
+    
 //---------- Test FIXED VOUT VER_1_1 --------//
     //poner y quitar el jumper me recupera del overcurrent
 #ifdef TEST_FIXED_VOUT
@@ -796,7 +1060,7 @@ int main(void)
         // UpdateLed();
         
     }	//fin while 1
-#endif TEST_INT_PRGRM
+#endif //TEST_INT_PRGRM
 
 
 //---------- Programa de Produccion --------//    
@@ -1011,6 +1275,49 @@ void Overcurrent_Shutdown (void)
 
 
 
+#ifdef VER_1_2
+void EXTI4_15_IRQHandler(void)
+{
+    if (EXTI->PR & 0x00000010)	//Line4
+    {
+        if (SENSE_MOSFET_A)
+        {
+            DisablePreload_MosfetA();
+            UpdateTIM_MosfetA(0);
+            EnablePreload_MosfetA();
+            UpdateTIM_MosfetA(DUTY_FOR_DMAX);            
+        }
+        else if (SENSE_MOSFET_B)
+        {
+            DisablePreload_MosfetB();
+            UpdateTIM_MosfetB(0);
+            EnablePreload_MosfetB();
+            UpdateTIM_MosfetB(DUTY_FOR_DMAX);
+        }
+        else
+        {
+            //llegue tarde o hay ruido
+        }
+        
+        EXTI->PR |= 0x00000010;    //4
+    }
+    else if (EXTI->PR & 0x00000020)	//Line5
+    {
+        DisablePreload_MosfetA();
+        DisablePreload_MosfetB();
+
+        UpdateTIMSync(0);
+        DISABLE_TIM3;
+        DISABLE_TIM1;
+
+        LED_ON;    //aviso con el led una vez que freno los pwm   
+
+        //Overcurret Shutdown
+        EXTI->PR |= 0x00000020;    //5
+    }
+}
+#endif
+
 #ifdef VER_1_1
 void EXTI4_15_IRQHandler(void)
 {
@@ -1027,8 +1334,25 @@ void EXTI0_1_IRQHandler(void)
 {
     if(EXTI->PR & 0x00000001)	//Line0
     {
-        UpdateTIMSync(0);
-
+        //reviso que mosfet generaba
+        if (CTRL_M_A)
+        {
+            DisablePreload_MosfetA();
+            UpdateTIM_MosfetA(0);
+            EnablePreload_MosfetA();
+            UpdateTIM_MosfetA(DUTY_FOR_DMAX);
+        }
+        else if (CTRL_M_B)
+        {
+            DisablePreload_MosfetB();
+            UpdateTIM_MosfetB(0);
+            EnablePreload_MosfetB();
+            UpdateTIM_MosfetB(DUTY_FOR_DMAX);            
+        }
+        else
+        {
+            //llegue muy tarde con la INT
+        }
 
         current_excess = 1;
 

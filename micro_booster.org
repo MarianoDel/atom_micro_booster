@@ -10,9 +10,9 @@
 *** TODO Revisar sensado de corriente - parece no funcionar ok -
 *** TODO Maxima tension de salida - quema el diodo FR307 -
     - Agregar red Snubber???
-*** TODO Soft start del filtro para Vout a traves de dmax y Vin [0/2]
-    - [ ] definir dmax segun la tension de entrada CORREGIR de 20 a 25V tiene el valor de 20
-    - [ ] revisar Vout en funcion de dmax con algo de carga
+*** TODO Soft start del filtro para Vout a traves de dmax y Vin [2/2]
+    - [X] definir dmax segun la tension de entrada CORREGIR de 20 a 25V tiene el valor de 20
+    - [X] revisar Vout en funcion de dmax con algo de carga
 
 *** TODO Temas del PID
     - Con un valor fijo de d; ejemplo d = 100 y Vout = 0, sin carga, salta la proteccion de 
