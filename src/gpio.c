@@ -56,7 +56,7 @@ void GPIO_Config (void)
     //10: Pull-down
     //11: Reserved
 
-#ifdef VER_1_2
+#if (defined VER_1_2) || (defined VER_2_0)
     //--- GPIO A ---//
     if (!GPIOA_CLK)
         GPIOA_CLK_ON;
@@ -380,7 +380,8 @@ void GPIO_Config (void)
 
 }
 
-#ifdef VER_1_2
+
+#if (defined VER_1_2) || (defined VER_2_0)
 #ifdef WITH_OVERCURRENT_SHUTDOWN
 inline void EXTIOff (void)
 {
@@ -402,7 +403,7 @@ inline void EXTIOn (void)
     EXTI->IMR |= 0x00000010;
 }
 #endif
-#endif    //ver 1.2
+#endif    //ver 1.2 or ver 2.0
 
 
 #ifdef VER_1_1

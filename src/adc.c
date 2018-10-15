@@ -89,7 +89,7 @@ void AdcConfig (void)
     //ADC1->SMPR |= ADC_SampleTime_1_5Cycles;			//20.7 de salida son SP 420 (regula mal)
 
     //set channel selection
-#ifdef VER_1_2
+#if (defined VER_1_2) || (defined VER_2_0)
     ADC1->CHSELR |= ADC_Channel_0 | ADC_Channel_1 | ADC_Channel_2;
 #endif
 
@@ -305,4 +305,7 @@ short ConvertTemp (unsigned short adc_temp)
     return (short) temperature;
 }
 #endif //ADC_WITH_TEMP_SENSE
+
+//--- end of file ---//
+
 

@@ -5,13 +5,17 @@
 // ## @TAGS:   Global
 // ## @CPU:    STM32F103
 // ##
-// #### DSP.H ################################
+// #### TIM.H ################################
 //---------------------------------------------
-#ifndef __STM32F0X_TIM_H
-#define __STM32F0X_TIM_H
+#ifndef _TIM_H_
+#define _TIM_H_
+
+//--- Incuded for help defines ---//
+#include "hard.h"
 
 //--- Exported types ---//
 //--- Exported constants ---//
+#define DUTY_5_PERCENT		50
 #define DUTY_10_PERCENT		100
 #define DUTY_50_PERCENT		500
 #define DUTY_100_PERCENT        1000
@@ -56,7 +60,12 @@
 
 
 //--- Exported wrapped functions ---//
+#ifdef WITH_TIM1_FB
 #define UpdateFB(X)    Update_TIM1_CH3(X)
+#endif
+#ifdef WITH_TIM14_FB
+#define UpdateFB(X)    Update_TIM14_CH1(X)
+#endif
 
 //--- Exported functions ---//
 void UpdateTIMSync (unsigned short);

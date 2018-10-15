@@ -7,8 +7,8 @@
 // ##
 // #### FLASH_PROGRAM.H ################################
 //---------------------------------------------
-#ifndef FLASH_PROGRAM_H_
-#define FLASH_PROGRAM_H_
+#ifndef _FLASH_PROGRAM_H_
+#define _FLASH_PROGRAM_H_
 
 
 #include "stm32f0xx.h"
@@ -122,4 +122,6 @@ unsigned char WriteConfigurations (parameters_typedef *);
 unsigned char WriteFlash(unsigned int * p, uint32_t p_addr, unsigned char with_lock, unsigned char len_in_4);
 void GetFlashConf (parameters_typedef * );
 
-#endif
+#endif    /* _FLASH_PROGRAM_H_ */
+
+//--- end of file ---//

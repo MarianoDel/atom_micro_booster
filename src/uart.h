@@ -12,6 +12,15 @@
 
 //--- Exported types ---//
 //--- Exported constants ---//
+#define USART_9600		5000
+#define USART_115200		416
+#define USART_250000		192
+
+//--- Modos de funcionamiento del USART1
+#define USART_GPS_MODE		1
+#define USART_GSM_MODE		2
+#define USART_ASK_MODE		0
+
 //--- Exported macro ---//
 #define USART1_CLK (RCC->APB2ENR & 0x00004000)
 #define USART1_CLK_ON RCC->APB2ENR |= 0x00004000
@@ -21,17 +30,9 @@
 #define USART2_CLK_ON RCC->APB1ENR |= 0x00020000
 #define USART2_CLK_OFF RCC->APB1ENR &= ~0x00020000
 
-#define USART_9600		5000
-#define USART_115200		416
-#define USART_250000		192
-
 #define USARTx_RX_DISA	USARTx->CR1 &= 0xfffffffb
 #define USARTx_RX_ENA	USARTx->CR1 |= 0x04
 
-//--- Modos de funcionamiento del USART1
-#define USART_GPS_MODE		1
-#define USART_GSM_MODE		2
-#define USART_ASK_MODE		0
 
 
 //--- Exported functions ---//

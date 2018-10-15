@@ -125,11 +125,12 @@ void TIM_1_Init (void)
     //TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
     TIM1->SMCR = 0x0000;
 
-#ifdef VER_1_2
+#if (defined VER_1_2) || (defined VER_2_0)
 #ifdef WITH_TIM1_FB
-    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
+    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
     TIM1->CCMR2 = 0x0060;            //CH3 output PWM mode 1
-    TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3E | TIM_CCER_CC3P;    //el pin es TIM1_CH3N    
+    TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3NE;    //el pin es TIM1_CH3N
+    // TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3NE | TIM_CCER_CC3NP;    //el pin es TIM1_CH3N    
 #else    
     TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
     TIM1->CCMR2 = 0x0000;            //
@@ -156,7 +157,7 @@ void TIM_1_Init (void)
     TIM1->CNT = 0;
     TIM1->PSC = 0;
 
-#ifdef VER_1_2
+#if (defined VER_1_2) || (defined VER_2_0)
 #ifdef WITH_TIM1_FB
     temp = GPIOB->AFR[0];
     temp &= 0xFFFFFF0F;
@@ -201,6 +202,7 @@ void TIM_1_Init (void)
     TIM1->CR1 |= TIM_CR1_CEN;
 
     TIM1->CCR1 = 0;
+    TIM1->CCR3 = 0;    
 }
 
 void TIM_3_Init (void)

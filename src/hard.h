@@ -5,7 +5,7 @@
 // ## @TAGS:   Global
 // ## @CPU:    STM32F103
 // ##
-// #### DSP.H ################################
+// #### HARD.H ################################
 //---------------------------------------------
 #ifndef _HARD_H_
 #define _HARD_H_
@@ -13,11 +13,19 @@
 
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
-// #define VER_1_0
+#define VER_2_0    //usa control de corriente pico
+// #define VER_1_2
 // #define VER_1_1		//cambia pinout respecto VER_1_0
-#define VER_1_2
+// #define VER_1_0
+
+
+
 
 //---- Configuration for Hardware Versions -------
+#ifdef VER_2_0
+#define HARDWARE_VERSION_2_0
+#define SOFTWARE_VERSION_2_0
+#endif
 #ifdef VER_1_2
 #define HARDWARE_VERSION_1_2
 #define SOFTWARE_VERSION_1_2
@@ -34,6 +42,19 @@
 
 //---- Features Configuration ----------------
 // #define DEBUG_ON
+
+// SOFT para VERSIONES V1_2
+#ifdef VER_2_0
+// Tipos de Programas 
+#define CURRENT_MODE_VER_2_0
+// #define TEST_FIXED_D
+// #define TEST_FIXED_VOUT
+
+// Tipos de Hardware Utilizado
+// #define WITH_OVERCURRENT_SHUTDOWN
+// #define WITH_TIM14_FB
+#define WITH_TIM1_FB
+#endif
 
 // SOFT para VERSIONES V1_2
 #ifdef VER_1_2
@@ -75,6 +96,9 @@
 #define str(s) #s
 
 //--- Hardware Welcome Code ------------------//
+#ifdef HARDWARE_VERSION_2_0
+#define HARD "Hardware V: 2.0\n"
+#endif
 #ifdef HARDWARE_VERSION_1_2
 #define HARD "Hardware V: 1.2\n"
 #endif
@@ -86,6 +110,9 @@
 #endif
 
 //--- Software Welcome Code ------------------//
+#ifdef SOFTWARE_VERSION_2_0
+#define SOFT "Software V: 2.0\n"
+#endif
 #ifdef SOFTWARE_VERSION_1_2
 #define SOFT "Software V: 1.2\n"
 #endif
@@ -112,11 +139,14 @@
 #ifdef ONLY_COMMS
 #define FEATURES "Only Communications for Ver 1.0\n"
 #endif
-#ifdef CURRENT_MODE_VER_1_0
-#define FEATURES "Current Mode for Hwd ver 1.0\n"
+#ifdef CURRENT_MODE_VER_2_0
+#define FEATURES_0 "Current Mode for Hwd ver 2.0\n"
 #endif
 #ifdef CURRENT_MODE_VER_1_2
 #define FEATURES_0 "Current Mode for Hwd ver 1.2\n"
+#endif
+#ifdef CURRENT_MODE_VER_1_0
+#define FEATURES "Current Mode for Hwd ver 1.0\n"
 #endif
 #ifdef WITH_OVERCURRENT_SHUTDOWN
 #define FEATURES_1 STRING_CONCAT(WITH_OVERCURRENT_SHUTDOWN,\n)
@@ -175,6 +205,55 @@
 #endif
 
 //------- PIN CONFIG ----------------------
+#ifdef VER_2_0
+//GPIOA pin0	Vin_Sense
+//GPIOA pin1	Vout_Sense
+//GPIOA pin2	I_Sense
+
+//GPIOA pin3	NC
+
+//GPIOA pin4	
+#define PROT_MOS	((GPIOA->IDR & 0x0010) == 0)
+
+//GPIOA pin5
+#define PROT_MOS_2 ((GPIOA->IDR & 0x0020) == 0)
+
+//GPIOA pin6	para TIM3_CH1 (MOSFET_A)
+
+//GPIOA pin7	SENSE_MOSFET_A
+#define SENSE_MOSFET_A ((GPIOA->IDR & 0x0080) != 0)
+
+//GPIOB pin0    NC
+
+//GPIOB pin1	para TIM14_CH1    Output max peak current
+
+//GPIOA pin8	para TIM1_CH1 (MOSFET_B)
+
+//GPIOA pin9
+//GPIOA pin10	usart1 tx rx
+
+//GPIOA pin11	SENSE_MOSFET_B
+#define SENSE_MOSFET_B ((GPIOA->IDR & 0x0800) != 0)
+
+//GPIOA pin12	NC
+//GPIOA pin13	NC
+//GPIOA pin14	NC
+
+//GPIOA pin15
+#define LED ((GPIOA->ODR & 0x8000) != 0)
+#define LED_ON	GPIOA->BSRR = 0x00008000
+#define LED_OFF GPIOA->BSRR = 0x80000000
+
+//GPIOB pin3	NC
+//GPIOB pin4	NC
+//GPIOB pin5	NC
+
+//GPIOB pin6
+#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
+
+//GPIOB pin7	NC
+#endif	//VER_1_2
+
 #ifdef VER_1_2
 //GPIOA pin0	Vin_Sense
 //GPIOA pin1	Vout_Sense

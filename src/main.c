@@ -90,6 +90,11 @@ volatile unsigned char timer_filters = 0;
 void TimingDelay_Decrement (void);
 void Overcurrent_Shutdown (void);
 
+#ifdef VER_2_0
+// ------- para el LM311 -------
+extern void EXTI4_15_IRQHandler(void);
+#endif
+
 #if defined VER_1_1 || defined VER_1_2
 // ------- para el LM393N -------
 extern void EXTI4_15_IRQHandler(void);
@@ -183,40 +188,40 @@ int main(void)
     //---- Welcome Code ------------//
     //---- Defines from hard.h -----//
 #ifdef HARD
-    Usart1Send((const char *) HARD);
+    Usart1Send((char *) HARD);
     Wait_ms(100);
 #else
 #error	"No Hardware defined in hard.h file"
 #endif
 
 #ifdef SOFT
-    Usart1Send((const char *) SOFT);
+    Usart1Send((char *) SOFT);
     Wait_ms(100);
 #else
 #error	"No Soft Version defined in hard.h file"
 #endif
 
 #ifdef FEATURES_0
-    Usart1Send((const char *) FEATURES_0);
+    Usart1Send((char *) FEATURES_0);
     Wait_ms(100);
 #endif
 #ifdef FEATURES_1
-    Usart1Send((const char *) FEATURES_1);
+    Usart1Send((char *) FEATURES_1);
     Wait_ms(100);
 #endif
 #ifdef FEATURES_2
-    Usart1Send((const char *) FEATURES_2);
+    Usart1Send((char *) FEATURES_2);
     Wait_ms(100);
 #endif
 #ifdef FEATURES_3
-    Usart1Send((const char *) FEATURES_3);
+    Usart1Send((char *) FEATURES_3);
     Wait_ms(100);
 #endif
     
 //---------- Test CURRENT_MODE_VER_1_2 --------//    
-#ifdef CURRENT_MODE_VER_1_2
+#if (defined CURRENT_MODE_VER_1_2) || (defined CURRENT_MODE_VER_2_0)
     
-    TIM_1_Init ();	   //lo utilizo para mosfet Ctrol_M_B
+    TIM_1_Init ();	   //lo utilizo para mosfet Ctrol_M_B y para FB si esta definido en hard.h
     TIM_3_Init ();	   //lo utilizo para mosfet Ctrol_M_A y para synchro ADC
 
 #ifdef WITH_TIM14_FB
@@ -233,43 +238,90 @@ int main(void)
     ADC1->CR |= ADC_CR_ADSTART;
 
     //--- Prueba HARD pin FB ----------
-    //porbar con WITH_TIM14_FB y WITH_TIM1_FB
-    while (1)
-    {
-        for (ii = 0; ii < DUTY_100_PERCENT; ii++)
-        {
-            UpdateFB(ii);
-            Wait_ms(1);
-        }
-        for (ii = DUTY_100_PERCENT; ii > 0; ii--)
-        {
-            UpdateFB(ii);
-            Wait_ms(1);
-        }
-    }
+    // //probar con WITH_TIM14_FB y WITH_TIM1_FB
+    // while (1)
+    // {
+    //     for (ii = 0; ii < DUTY_100_PERCENT; ii++)
+    //     {
+    //         UpdateFB(ii);
+    //         Wait_ms(1);
+    //     }
+    //     for (ii = DUTY_100_PERCENT; ii > 0; ii--)
+    //     {
+    //         UpdateFB(ii);
+    //         Wait_ms(1);
+    //     }
+    // }
     //--- Fin Prueba HARD pin FB ----------
 
     //--- Prueba HARD pines CTRL_MOSFET ----------
-    UpdateTIMSync (DUTY_FOR_DMAX);
-    while (1);
+    // UpdateTIMSync (DUTY_FOR_DMAX);
+    // while (1);
     //--- Fin Prueba HARD pines CTRL_MOSFET ----------
 
     //--- Prueba HARD pines ADC ----------
+    // while (1)
+    // {
+    //     if (!timer_standby)
+    //     {
+    //         timer_standby = 2000;
+    //         sprintf (s_lcd, "Vin: %d, Vout: %d, I: %d\n",
+    //                  Vin_Sense,
+    //                  Vout_Sense,
+    //                  I_Sense);
+            
+    //         Usart1Send(s_lcd);
+    //     }
+    // }   
+    //--- Fin Prueba HARD pines ADC ----------
+
+    //--- Prueba tension de salida con max d fijo ----------
+    //este loop trabaja en voltage-mode
     while (1)
     {
+        if (sequence_ready)
+        {
+            sequence_ready_reset;
+                
+            if (undersampling < (UNDERSAMPLING_TICKS - 1))
+            {
+                undersampling++;
+            }
+            else
+            {
+                undersampling = 0;
+                d = PID_roof (VOUT_110V, Vout_Sense, d, &ez1, &ez2);
+                    
+                if (d < 0)
+                {
+                    d = 0;
+                    ez1 = 0;
+                    ez2 = 0;
+                }
+
+                if (d > DUTY_5_PERCENT)
+                    d = DUTY_5_PERCENT;
+
+                UpdateTIMSync (d);
+            }
+        }
+
         if (!timer_standby)
         {
             timer_standby = 2000;
-            sprintf (s_lcd, "Vin: %d, Vout: %d, I: %d\n",
+            sprintf (s_lcd, "Vin: %d, Vout: %d, I: %d, d: %d\n",
                      Vin_Sense,
                      Vout_Sense,
-                     I_Sense);
+                     I_Sense,
+                     d);
             
             Usart1Send(s_lcd);
         }
-    }   
-    //--- Fin Prueba HARD pines ADC ----------
-    
+
+    }
+    //--- Fin Prueba tension de salida con max d fijo ----------
+                
+
     //este programa tiene dos loops uno de hardware con la corriente pico
     //otro de soft con la tension de salida
     while (1)
@@ -357,7 +409,7 @@ int main(void)
             // dmax_in = UpdateDMAX(vin_filtered);
         }
     }    //end of while 1
-#endif    //current mode ver 1.2
+#endif    //current mode ver 1.2 or current mode ver 2.0
 //---------- Fin Test CURRENT_MODe_VER_1_2 --------//
 
 //---------- Test CURRENT_MODE_VER_1_0 --------//    
@@ -1274,6 +1326,33 @@ void Overcurrent_Shutdown (void)
 }
 
 
+#ifdef VER_2_0
+void EXTI4_15_IRQHandler(void)
+{
+    if (SENSE_MOSFET_A)
+    {
+        DisablePreload_MosfetA();
+        UpdateTIM_MosfetA(0);
+        EnablePreload_MosfetA();
+        UpdateTIM_MosfetA(DUTY_FOR_DMAX);
+    }
+    else if (SENSE_MOSFET_B)
+    {
+        DisablePreload_MosfetB();
+        UpdateTIM_MosfetB(0);
+        EnablePreload_MosfetB();
+        UpdateTIM_MosfetB(DUTY_FOR_DMAX);
+    }
+    else
+    {
+        //llegue tarde o hay ruido
+        UpdateTIM_MosfetA(0);
+        UpdateTIM_MosfetB(0);
+    }
+        
+    EXTI->PR |= 0x00000010;    //4
+}
+#endif
 
 #ifdef VER_1_2
 void EXTI4_15_IRQHandler(void)

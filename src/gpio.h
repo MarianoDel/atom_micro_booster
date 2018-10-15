@@ -3,12 +3,12 @@
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
-// ## @CPU:    STM32F103
+// ## @CPU:    STM32F030
 // ##
 // #### GPIO.H ################################
 //---------------------------------------------
-#ifndef __GPIO_H
-#define __GPIO_H
+#ifndef _GPIO_H_
+#define _GPIO_H_
 
 //#include "stm32f0xx.h"
 
