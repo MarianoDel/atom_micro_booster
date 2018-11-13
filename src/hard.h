@@ -10,7 +10,6 @@
 #ifndef _HARD_H_
 #define _HARD_H_
 
-
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
 #define VER_2_0    //usa control de corriente pico
@@ -19,7 +18,15 @@
 // #define VER_1_0
 
 
+#define VOUT_SETPOINT    VOUT_200V
+#define VOUT_HIGH_MODE_CHANGE    VOUT_205V
+#define VOUT_LOW_MODE_CHANGE    VOUT_195V
 
+#define DUTY_TO_CHANGE_CURRENT_MODE    25
+#define DUTY_TO_CHANGE_VOLTAGE_MODE    18
+
+#define VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT    VOUT_300V
+#define VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT    VOUT_200V
 
 //---- Configuration for Hardware Versions -------
 #ifdef VER_2_0
@@ -41,6 +48,7 @@
 
 
 //---- Features Configuration ----------------
+//features are activeted here and annouced in hard.c
 // #define DEBUG_ON
 
 // SOFT para VERSIONES V1_2
@@ -92,8 +100,9 @@
 
 //--- Stringtify Utils -----------------------
 #define STRING_CONCAT(str1,str2) #str1 " " #str2
-#define xstr(s) str(s)
-#define str(s) #s
+#define STRING_CONCAT_NEW_LINE(str1,str2) xstr(str1) #str2 "\n"
+#define xstr_macro(s) str_macro(s)
+#define str_macro(s) #s
 
 //--- Hardware Welcome Code ------------------//
 #ifdef HARDWARE_VERSION_2_0
@@ -124,42 +133,7 @@
 #endif
 
 //--- Type of Program Announcement ----------------
-#ifdef TEST_INT_PRGRM
-#define FEATURES "Programa de Testeo INT\n"
-#endif
-#ifdef TEST_ADC_AND_DMA
-#define FEATURES "Programa de Testeo ADC -> DMA\n"
-#endif
-#ifdef TEST_FIXED_D
-#define FEATURES "Programa de ciclo d fijo\n"
-#endif
-#ifdef TEST_FIXED_VOUT
-#define FEATURES "Programa Vout fijo\n"
-#endif
-#ifdef ONLY_COMMS
-#define FEATURES "Only Communications for Ver 1.0\n"
-#endif
-#ifdef CURRENT_MODE_VER_2_0
-#define FEATURES_0 "Current Mode for Hwd ver 2.0\n"
-#endif
-#ifdef CURRENT_MODE_VER_1_2
-#define FEATURES_0 "Current Mode for Hwd ver 1.2\n"
-#endif
-#ifdef CURRENT_MODE_VER_1_0
-#define FEATURES "Current Mode for Hwd ver 1.0\n"
-#endif
-#ifdef WITH_OVERCURRENT_SHUTDOWN
-#define FEATURES_1 STRING_CONCAT(WITH_OVERCURRENT_SHUTDOWN,\n)
-#endif
-#ifdef WITH_TIM14_FB
-#define FEATURES_2 STRING_CONCAT(WITH_TIM14_FB,\n)
-#endif
-#ifdef WITH_TIM1_FB
-#define FEATURES_3 STRING_CONCAT(WITH_TIM1_FB,\n)
-#endif
-
-
-
+#define FEATURES    //welcome code & features are in hard.c
 
 
 //-------- Others Configurations depending on the formers ------------
@@ -177,6 +151,8 @@
 // #define VOUT_200V    415
 #define VOUT_110V    151    //ajustado 05-08-18
 #define VOUT_200V    386    //ajustado 24-07-18
+#define VOUT_205V    399    
+#define VOUT_195V    373
 #define VOUT_300V    660    //ajustado 24-07-18
 #define VOUT_350V    802    //ajustado 24-07-18
 
@@ -406,10 +382,12 @@ typedef enum
 {
     MAIN_INIT = 0,
     MAIN_SOFT_START,
-    MAIN_GENERATING,
+    MAIN_VOLTAGE_MODE,
+    MAIN_CURRENT_MODE,
     MAIN_OVERCURRENT,
     MAIN_JUMPER_PROTECTED,
     MAIN_GO_TO_FAILURE,
+    MAIN_OVERVOLTAGE,    
     MAINS_FAILURE
 
 } main_state_t;
@@ -461,5 +439,6 @@ unsigned short UpdateDMAXSF (unsigned short);
 unsigned short UpdateDmaxLout (unsigned short);
 unsigned short VoutTicksToVoltage (unsigned short);
 unsigned short VinTicksToVoltage (unsigned short);
+void WelcomeCodeFeatures (char *);
     
 #endif /* _HARD_H_ */

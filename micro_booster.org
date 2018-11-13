@@ -40,4 +40,9 @@
 
 
 * Caracteristicas especiales de Hardware
+** Retardo entre salida pwm y deteccon de Int
+   - incluso con la pata (+) del coparador en 0 existe un retardo de XXus en la deteccion
+*** Probar con pwm fijo y medir Int con LED
+
+** Por el punto anterior debiera trabajar VM y luego CM segun ciclo de trabajo
 
