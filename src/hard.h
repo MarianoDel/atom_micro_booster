@@ -55,6 +55,8 @@
 #ifdef VER_2_0
 // Tipos de Programas 
 #define CURRENT_MODE_VER_2_0
+#define USE_ONLY_CM
+// #define USE_VM_AND_CM
 // #define TEST_FIXED_D
 // #define TEST_FIXED_VOUT
 
@@ -157,7 +159,8 @@
 #define VOUT_350V    802    //ajustado 24-07-18
 
 //Caracteristicas de la bobina de salida
-#define LOUT_UHY    130    //DINL2
+// #define LOUT_UHY    130    //DINL2
+#define LOUT_UHY    330    //doble bobina amarilla
 #define ILOUT       3      //DINL2 corriente un poco menor a la que satura el inductor
 #define TICK_PWM_NS 21
 #define N_TRAFO     18300

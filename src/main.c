@@ -77,7 +77,8 @@ volatile unsigned short timer_standby;
 volatile unsigned char timer_meas;
 volatile unsigned char timer_filters = 0;
 
-volatile unsigned short dmax_vin = 0;
+volatile unsigned short dmax_permited = 0;
+volatile unsigned char llegue_tarde = 0;
 // volatile unsigned short secs = 0;
 // volatile unsigned char hours = 0;
 // volatile unsigned char minutes = 0;
@@ -126,6 +127,7 @@ int main(void)
 
 // #ifdef TEST_FIXED_VOUT    
     unsigned short dmax_lout = 0;
+    unsigned short dmax_vin = 0;    
     unsigned int delta_vout = 0;
     unsigned short normalized_vout = 0;
 // #endif
@@ -311,10 +313,188 @@ int main(void)
     // }
     //--- Fin Prueba tension de salida con max d fijo ----------
                 
+#ifdef USE_ONLY_CM
+    timer_standby = 2000;
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_INIT:
+            if (!timer_standby)
+            {
+                EXTIOn();
+                UpdateTIMSync(dmax_vin);
+                // UpdateTIMSync(DUTY_NONE);
+                UpdateFB(DUTY_NONE);
+                main_state = MAIN_CURRENT_MODE;
+                timer_standby = 2000;
+            }
 
+            if (sequence_ready)
+                sequence_ready_reset;
+            break;
+
+        case MAIN_CURRENT_MODE:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+
+                if (undersampling < (UNDERSAMPLING_TICKS - 1))
+                    undersampling++;
+                else
+                {
+                    undersampling = 0;
+                    d = PID_roof (VOUT_SETPOINT, Vout_Sense, d, &ez1, &ez2);                    
+                    
+                    if (d < 0)
+                    {
+                        //me pase de tension voy a voltage mode para tener buena regulacion en vacio
+                        UpdateFB(DUTY_NONE);
+                        d = 0;
+                        ez1 = 0;
+                        ez2 = 0;
+                    }
+                    else
+                    {
+                        //seteo FB y espero int del lazo de corriente
+                        if (d > DUTY_100_PERCENT)
+                            d = DUTY_100_PERCENT;
+
+                        //por ahora no seteo d
+                        // UpdateFB(d);
+                    }
+                }
+                
+                //tambien por cada muestra calculo el dmax_permited
+                delta_vout = VinTicksToVoltage(Vin_Sense);                        
+                delta_vout = (delta_vout * N_TRAFO) / 1000;
+
+                normalized_vout = VoutTicksToVoltage(Vout_Sense);
+
+                if (delta_vout > normalized_vout)
+                    delta_vout = delta_vout - normalized_vout;
+                else
+                    delta_vout = 0;
+
+                dmax_lout = UpdateDmaxLout((unsigned short)delta_vout);
+                if (dmax_vin > dmax_lout)
+                {
+                    //dmax por corriente out
+                    EXTIOff();
+                    dmax_permited = dmax_lout;
+                    EXTIOn();
+                }
+                else
+                {
+                    //dmax por vin
+                    EXTIOff();
+                    dmax_permited = dmax_vin;
+                    EXTIOn();
+                }
+                //fin calculo dmax_permited
+                
+            }    //cierra sequence
+
+            //proteccion de sobretension
+            if (Vout_Sense > VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT)
+            {
+                UpdateTIMSync(DUTY_NONE);
+                UpdateFB(DUTY_NONE);
+                EXTIOff();
+                LED_ON;
+                main_state = MAIN_OVERVOLTAGE;
+                Usart1Send((char *) "Overvoltage! CM\n");
+            }
+
+            if (llegue_tarde == 1)
+            {
+                Usart1Send((char *) "Tarde!!!\n");
+                llegue_tarde = 2;
+            }
+            break;
+
+        case MAIN_OVERVOLTAGE:
+            if ((!timer_standby) && (sequence_ready))
+            {
+                sequence_ready_reset;
+                if (Vout_Sense < VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT)
+                {
+                    LED_ON;
+                    timer_standby = 2000;
+                    // main_state = MAIN_SOFT_START;
+                    Usart1Send((char *) "Reconnect...\n");
+                }
+            }
+            break;
+            
+        case MAIN_JUMPER_PROTECTED:
+            if (!timer_standby)
+            {
+                if (!STOP_JUMPER)
+                {
+                    //vuelvo a INIT
+                    main_state = MAIN_INIT;
+                }
+            }                
+            break;
+
+        case MAIN_OVERCURRENT:
+            // if ((!PROT_MOS_A) && (!PROT_MOS_B))
+            // {
+            //     if ((!timer_standby) && (STOP_JUMPER))    //solo destrabo si se coloca el Jumper y se quita
+            //     {                                         //en MAIN_JUMPER_PROTECTED
+            //         LED_OFF;
+            //         ENABLE_TIM3;
+            //         ENABLE_TIM1;
+            //         main_state = MAIN_JUMPER_PROTECTED;
+            //     }
+            // }
+            break;
+
+        default:
+            main_state = MAIN_INIT;
+            break;
+        }	//fin switch main_state
+        
+        //Cosas que no tienen tanto que ver con las muestras o el estado del programa
+        if ((STOP_JUMPER) &&
+            (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_OVERCURRENT))
+        {
+            UpdateTIMSync (0);
+            d = 0;
+            last_d = 0;
+            timer_standby = 300;    //doy minimo 300ms para reactivar
+            main_state = MAIN_JUMPER_PROTECTED;
+        }
+
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_vin: %d, dmax_lout: %d\n",
+                     vin_filtered,
+                     Vout_Sense,
+                     d,
+                     dmax_vin,
+                     dmax_lout);
+            
+            Usart1Send(s_lcd);
+        }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            dmax_vin = UpdateDMAX(vin_filtered);
+        }
+    }
+#endif    //USE_ONLY_CM
+
+#ifdef USE_VM_AND_CM
     //programa de produccion tiene dos loops uno voltage mode y el otro current mode
     //ademas revisa y hace un update del din_max para no saturar al trafo
-
     timer_standby = 2000;
     while (1)
     {
@@ -399,10 +579,11 @@ int main(void)
                         (d > DUTY_TO_CHANGE_CURRENT_MODE) &&
                         (!timer_standby))
                     {
-                        EXTIOn();
+                        UpdateTIMSync(dmax_vin);
+                        llegue_tarde = 0;
                         main_state = MAIN_CURRENT_MODE;
                         Usart1Send((char *) "To CM\n");
-                        UpdateTIMSync(dmax_vin);
+                        EXTIOn();
                     }
                 }
             }    //cierra sequence
@@ -430,25 +611,25 @@ int main(void)
                     undersampling = 0;
                     d = PID_roof (VOUT_SETPOINT, Vout_Sense, d, &ez1, &ez2);                    
                     
-                    // if (d < DUTY_TO_CHANGE_VOLTAGE_MODE)
-                    // {
-                    //     //me pase de tension voy a voltage mode para tener buena regulacion en vacio
-                    //     main_state = MAIN_VOLTAGE_MODE;
-                    //     UpdateFB(DUTY_NONE);
-                    //     EXTIOff();
-                    //     d = 0;
-                    //     ez1 = 0;
-                    //     ez2 = 0;
-                    //     Usart1Send((char *) "To VM\n");
-                    // }
-                    // else
-                    // {
+                    if (d < DUTY_TO_CHANGE_VOLTAGE_MODE)
+                    {
+                        //me pase de tension voy a voltage mode para tener buena regulacion en vacio
+                        main_state = MAIN_VOLTAGE_MODE;
+                        UpdateFB(DUTY_NONE);
+                        EXTIOff();
+                        d = 0;
+                        ez1 = 0;
+                        ez2 = 0;
+                        Usart1Send((char *) "To VM\n");
+                    }
+                    else
+                    {
                         //seteo FB y espero int del lazo de corriente
                         if (d > DUTY_100_PERCENT)
                             d = DUTY_100_PERCENT;
                         
                         UpdateFB(d);
-                    // }
+                    }
                 }
             }    //cierra sequence
 
@@ -461,7 +642,13 @@ int main(void)
                 LED_ON;
                 main_state = MAIN_OVERVOLTAGE;
                 Usart1Send((char *) "Overvoltage! CM\n");
-            }            
+            }
+
+            if (llegue_tarde == 1)
+            {
+                Usart1Send((char *) "Tarde!!!\n");
+                llegue_tarde = 2;
+            }
             break;
 
         case MAIN_OVERVOLTAGE:
@@ -540,6 +727,8 @@ int main(void)
             dmax_vin = UpdateDMAX(vin_filtered);
         }
     }    //end of while 1
+#endif    //USE_VM_AND_CM
+    
 #endif    //current mode ver 1.2 or current mode ver 2.0
 //---------- Fin Test CURRENT_MODe_VER_1_2 --------//
 
@@ -1537,20 +1726,31 @@ void EXTI4_15_IRQHandler(void)
         DisablePreload_MosfetA();
         UpdateTIM_MosfetA(0);
         EnablePreload_MosfetA();
-        UpdateTIM_MosfetA(dmax_vin);
+        UpdateTIM_MosfetA(dmax_permited);
     }
     else if (SENSE_MOSFET_B)
     {
         DisablePreload_MosfetB();
         UpdateTIM_MosfetB(0);
         EnablePreload_MosfetB();
-        UpdateTIM_MosfetB(dmax_vin);
+        UpdateTIM_MosfetB(dmax_permited);
     }
     else
     {
         //llegue tarde o hay ruido
+        //paro mosfet A
+        DisablePreload_MosfetA();
         UpdateTIM_MosfetA(0);
+        EnablePreload_MosfetA();
+        UpdateTIM_MosfetA(dmax_permited);
+
+        //paro mosfet B
+        DisablePreload_MosfetB();
         UpdateTIM_MosfetB(0);
+        EnablePreload_MosfetB();
+        UpdateTIM_MosfetB(dmax_permited);
+        
+        llegue_tarde = 1;
     }
         
     EXTI->PR |= 0x00000010;    //4
