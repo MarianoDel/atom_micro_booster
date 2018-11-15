@@ -28,45 +28,45 @@ volatile unsigned short timer_1000 = 0;
 
 
 //--- FUNCIONES DEL MODULO ---//
-inline void UpdateTIMSync (unsigned short a)
-{
-    //primero cargo TIM1
-    TIM1->CCR1 = a;
-    TIM3->ARR = DUTY_50_PERCENT + a;    //TIM3->CCR1 es el delay entre timers
-                                        //lo cargo en el timer init
-}
+// inline void UpdateTIMSync (unsigned short a)
+// {
+//     //primero cargo TIM1
+//     TIM1->CCR1 = a;
+//     TIM3->ARR = DUTY_50_PERCENT + a;    //TIM3->CCR1 es el delay entre timers
+//                                         //lo cargo en el timer init
+// }
 
-inline void UpdateTIM_MosfetA (unsigned short a)
-{
-    TIM3->ARR = DUTY_50_PERCENT + a;    
-}
+// inline void UpdateTIM_MosfetA (unsigned short a)
+// {
+//     TIM3->ARR = DUTY_50_PERCENT + a;    
+// }
 
-inline void UpdateTIM_MosfetB (unsigned short a)
-{
-    TIM1->CCR1 = a;
-}
+// inline void UpdateTIM_MosfetB (unsigned short a)
+// {
+//     TIM1->CCR1 = a;
+// }
 
-inline void EnablePreload_MosfetA (void)
-{
-    // TIM3->CCMR1 |= TIM_CCMR1_OC1PE;
-    TIM3->CR1 |= TIM_CR1_ARPE;
-}
+// inline void EnablePreload_MosfetA (void)
+// {
+//     // TIM3->CCMR1 |= TIM_CCMR1_OC1PE;
+//     TIM3->CR1 |= TIM_CR1_ARPE;
+// }
 
-inline void DisablePreload_MosfetA (void)
-{
-    // TIM3->CCMR1 &= ~TIM_CCMR1_OC1PE;
-    TIM3->CR1 &= ~TIM_CR1_ARPE;    
-}
+// inline void DisablePreload_MosfetA (void)
+// {
+//     // TIM3->CCMR1 &= ~TIM_CCMR1_OC1PE;
+//     TIM3->CR1 &= ~TIM_CR1_ARPE;    
+// }
 
-inline void EnablePreload_MosfetB (void)
-{
-    TIM1->CCMR1 |= TIM_CCMR1_OC1PE;
-}
+// inline void EnablePreload_MosfetB (void)
+// {
+//     TIM1->CCMR1 |= TIM_CCMR1_OC1PE;
+// }
 
-inline void DisablePreload_MosfetB (void)
-{
-    TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE;
-}
+// inline void DisablePreload_MosfetB (void)
+// {
+//     TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE;
+// }
 
 void Update_TIM1_CH3 (unsigned short a)
 {
@@ -155,7 +155,14 @@ void TIM_1_Init (void)
     TIM1->ARR = DUTY_100_PERCENT;                //cada tick 20.83ns
 
     TIM1->CNT = 0;
+#if defined USE_96KHZ
     TIM1->PSC = 0;
+#elif defined USE_48KHZ
+    TIM1->PSC = 1;
+#else
+#error "Set working frequency on hard.h"
+#endif
+
 
 #if (defined VER_1_2) || (defined VER_2_0)
 #ifdef WITH_TIM1_FB
@@ -230,7 +237,15 @@ void TIM_3_Init (void)
     //TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
     TIM3->ARR = DUTY_50_PERCENT;
     TIM3->CNT = 0;
+#if defined USE_96KHZ
     TIM3->PSC = 0;
+#elif defined USE_48KHZ
+    TIM3->PSC = 1;
+#else
+#error "Set working frequency on hard.h"
+#endif
+    
+
     //TIM3->EGR = TIM_EGR_UG;    //generate event
 
     //Configuracion Pines
@@ -251,7 +266,13 @@ void TIM_3_Init (void)
     TIM3->CR1 |= TIM_CR1_CEN;
 
     //TIM3->CCR2 = 512;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
-    TIM3->CCR1 = (DUTY_50_PERCENT + 1);        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+#ifdef USE_ONLY_CM_ONLY_MOSFET_B
+    //esto anula la salida
+    TIM3->CCR1 = DUTY_50_PERCENT + 1;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+#else
+    //esto filtra un pulsito
+    TIM3->CCR1 = DUTY_50_PERCENT;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+#endif
 }
 
 

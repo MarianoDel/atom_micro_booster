@@ -163,14 +163,14 @@ void GPIO_Config (void)
     SYSCFG->EXTICR[1] = 0x00000000; //Select Port A & Pin4 external interrupt
     // EXTI->IMR |= 0x00000010; 			//Corresponding mask bit for interrupts EXTI4
     EXTI->EMR |= 0x00000000; 			//Corresponding mask bit for events
-    EXTI->RTSR |= 0x00000010; 			//Interrupt line on rising edge
-    EXTI->FTSR |= 0x00000000; 			//Interrupt line on falling edge
+    EXTI->RTSR |= 0x00000000; 			//Interrupt line on rising edge
+    EXTI->FTSR |= 0x00000010; 			//Interrupt line on falling edge
 
     NVIC_EnableIRQ(EXTI4_15_IRQn);
     NVIC_SetPriority(EXTI4_15_IRQn, 2);    
 #endif    
 
-#endif    //end ver_1_2
+#endif    //end ver_1_2 and ver_2_0
 
 #ifdef VER_1_1
     //--- GPIO A ---//

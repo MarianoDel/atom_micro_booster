@@ -55,11 +55,14 @@
 #ifdef VER_2_0
 // Tipos de Programas 
 #define CURRENT_MODE_VER_2_0
-#define USE_ONLY_CM
+#define USE_ONLY_CM_ONLY_MOSFET_A
+// #define USE_ONLY_CM_ONLY_MOSFET_B
+// #define USE_ONLY_CM
 // #define USE_VM_AND_CM
 // #define TEST_FIXED_D
 // #define TEST_FIXED_VOUT
-
+#define USE_96KHZ
+// #define USE_48KHZ
 // Tipos de Hardware Utilizado
 // #define WITH_OVERCURRENT_SHUTDOWN
 // #define WITH_TIM14_FB

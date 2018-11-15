@@ -12,6 +12,7 @@
 
 //--- Incuded for help defines ---//
 #include "hard.h"
+#include "stm32f0xx.h"
 
 //--- Exported types ---//
 //--- Exported constants ---//
@@ -59,6 +60,18 @@
 #define RCC_TIM17_CLK_ON 	RCC->APB2ENR |= 0x00040000
 #define RCC_TIM17_CLK_OFF 	RCC->APB2ENR &= ~0x00040000
 
+#define DisablePreload_MosfetA    (TIM3->CR1 &= ~TIM_CR1_ARPE)
+#define EnablePreload_MosfetA    (TIM3->CR1 |= TIM_CR1_ARPE)
+#define EnablePreload_MosfetB    (TIM1->CCMR1 |= TIM_CCMR1_OC1PE)
+#define DisablePreload_MosfetB    (TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE)
+
+#define UpdateTIM_MosfetA(X)    (TIM3->ARR = DUTY_50_PERCENT + (X))    
+#define UpdateTIM_MosfetB(X)    (TIM1->CCR1 = (X))
+
+#define UpdateTIMSync(X)    do {\
+    TIM1->CCR1 = (X);                  \
+    TIM3->ARR = DUTY_50_PERCENT + (X); \
+    } while(0)
 
 //--- Exported wrapped functions ---//
 #ifdef WITH_TIM1_FB
@@ -69,14 +82,7 @@
 #endif
 
 //--- Exported functions ---//
-void UpdateTIMSync (unsigned short);
-void UpdateTIM_MosfetA (unsigned short);
-void UpdateTIM_MosfetB (unsigned short);
 
-void EnablePreload_MosfetA (void);
-void EnablePreload_MosfetB (void);
-void DisablePreload_MosfetA (void);
-void DisablePreload_MosfetB (void);
 
 void TIM_1_Init(void);
 void Update_TIM1_CH1 (unsigned short);

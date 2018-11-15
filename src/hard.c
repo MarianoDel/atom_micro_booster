@@ -262,6 +262,18 @@ void WelcomeCodeFeatures (char * str)
     Wait_ms(30);    
 #endif
 
+#ifdef USE_ONLY_CM_ONLY_MOSFET_B
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_CM_ONLY_MOSFET_B));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif
+
+#ifdef USE_ONLY_CM_ONLY_MOSFET_A
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_CM_ONLY_MOSFET_A));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif
+    
 #ifdef USE_VM_AND_CM
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_VM_AND_CM));
     Usart1Send(str);
@@ -280,6 +292,16 @@ void WelcomeCodeFeatures (char * str)
 #endif
 #ifdef WITH_TIM1_FB
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(WITH_TIM1_FB));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif
+#ifdef USE_96KHZ
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_96KHZ));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif
+#ifdef USE_48KHZ
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_48KHZ));
     Usart1Send(str);
     Wait_ms(30);    
 #endif
