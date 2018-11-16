@@ -326,7 +326,7 @@ int main(void)
                 EnablePreload_MosfetA;
                 EXTIOn();
                 //si no le pongo esto puede que no arranque
-                dmax_permited = 25;
+                dmax_permited = 450;
                 UpdateTIM_MosfetA(dmax_permited);
                 UpdateFB(DUTY_NONE);
                 main_state = MAIN_CURRENT_MODE;
@@ -360,11 +360,11 @@ int main(void)
                     else
                     {
                         //seteo FB y espero int del lazo de corriente
-                        if (d > DUTY_100_PERCENT)
-                            d = DUTY_100_PERCENT;
+                        if (d > DUTY_FB_25A)
+                            d = DUTY_FB_25A;
 
                         //por ahora no seteo d
-                        // UpdateFB(d);
+                        UpdateFB(d);
                     }
                 }
                 
@@ -380,20 +380,20 @@ int main(void)
                     delta_vout = 0;
 
                 dmax_lout = UpdateDmaxLout((unsigned short)delta_vout);
-                if (dmax_vin > dmax_lout)
-                {
-                    //dmax por corriente out
-                    EXTIOff();
-                    dmax_permited = dmax_lout;
-                    EXTIOn();
-                }
-                else
-                {
-                    //dmax por vin
-                    EXTIOff();
-                    dmax_permited = dmax_vin;
-                    EXTIOn();
-                }
+                // if (dmax_vin > dmax_lout)
+                // {
+                //     //dmax por corriente out
+                //     EXTIOff();
+                //     dmax_permited = dmax_lout;
+                //     EXTIOn();
+                // }
+                // else
+                // {
+                //     //dmax por vin
+                //     EXTIOff();
+                //     dmax_permited = dmax_vin;
+                //     EXTIOn();
+                // }
                 //fin calculo dmax_permited
                 
             }    //cierra sequence
@@ -513,7 +513,7 @@ int main(void)
                 EnablePreload_MosfetB;
                 EXTIOn();
                 //si no le pongo esto puede que no arranque
-                dmax_permited = 25;
+                dmax_permited = 150;
                 UpdateTIM_MosfetB(dmax_permited);
                 UpdateFB(DUTY_NONE);
                 main_state = MAIN_CURRENT_MODE;
@@ -567,20 +567,20 @@ int main(void)
                     delta_vout = 0;
 
                 dmax_lout = UpdateDmaxLout((unsigned short)delta_vout);
-                if (dmax_vin > dmax_lout)
-                {
-                    //dmax por corriente out
-                    EXTIOff();
-                    dmax_permited = dmax_lout;
-                    EXTIOn();
-                }
-                else
-                {
-                    //dmax por vin
-                    EXTIOff();
-                    dmax_permited = dmax_vin;
-                    EXTIOn();
-                }
+                // if (dmax_vin > dmax_lout)
+                // {
+                //     //dmax por corriente out
+                //     EXTIOff();
+                //     dmax_permited = dmax_lout;
+                //     EXTIOn();
+                // }
+                // else
+                // {
+                //     //dmax por vin
+                //     EXTIOff();
+                //     dmax_permited = dmax_vin;
+                //     EXTIOn();
+                // }
                 //fin calculo dmax_permited
                 
             }    //cierra sequence

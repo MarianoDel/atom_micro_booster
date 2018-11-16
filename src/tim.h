@@ -23,6 +23,8 @@
 #define DUTY_100_PERCENT        1000
 #define DUTY_FOR_DMAX           450
 
+#define DUTY_FB_25A    395    //esto es 1.17V que equivale a 25Apico en el primario
+
 #define ENABLE_TIM1			TIM1->CR1 |= TIM_CR1_CEN;
 #define DISABLE_TIM1			TIM1->CR1 &= ~TIM_CR1_CEN;
 
@@ -60,18 +62,30 @@
 #define RCC_TIM17_CLK_ON 	RCC->APB2ENR |= 0x00040000
 #define RCC_TIM17_CLK_OFF 	RCC->APB2ENR &= ~0x00040000
 
-#define DisablePreload_MosfetA    (TIM3->CR1 &= ~TIM_CR1_ARPE)
+#ifdef USE_ONLY_CM_ONLY_MOSFET_A
+#define DisablePreload_MosfetA    (TIM3->CCMR1 &= ~TIM_CCMR1_OC1PE)
+#define EnablePreload_MosfetA    (TIM3->CCMR1 |= TIM_CCMR1_OC1PE)
+#define UpdateTIM_MosfetA(X)    (TIM3->CCR1 = (X))
+#define UpdateTIMSync(X)    do {\
+    TIM1->CCR1 = (X); \
+    TIM3->CCR1 = (X); \
+    } while(0)
+#endif
+
+#ifndef USE_ONLY_CM_ONLY_MOSFET_A
 #define EnablePreload_MosfetA    (TIM3->CR1 |= TIM_CR1_ARPE)
-#define EnablePreload_MosfetB    (TIM1->CCMR1 |= TIM_CCMR1_OC1PE)
-#define DisablePreload_MosfetB    (TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE)
-
-#define UpdateTIM_MosfetA(X)    (TIM3->ARR = DUTY_50_PERCENT + (X))    
-#define UpdateTIM_MosfetB(X)    (TIM1->CCR1 = (X))
-
+#define DisablePreload_MosfetA    (TIM3->CR1 &= ~TIM_CR1_ARPE)
+#define UpdateTIM_MosfetA(X)    (TIM3->ARR = DUTY_50_PERCENT + (X))
 #define UpdateTIMSync(X)    do {\
     TIM1->CCR1 = (X);                  \
     TIM3->ARR = DUTY_50_PERCENT + (X); \
     } while(0)
+#endif
+
+#define EnablePreload_MosfetB    (TIM1->CCMR1 |= TIM_CCMR1_OC1PE)
+#define DisablePreload_MosfetB    (TIM1->CCMR1 &= ~TIM_CCMR1_OC1PE)
+#define UpdateTIM_MosfetB(X)    (TIM1->CCR1 = (X))
+
 
 //--- Exported wrapped functions ---//
 #ifdef WITH_TIM1_FB

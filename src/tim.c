@@ -212,6 +212,65 @@ void TIM_1_Init (void)
     TIM1->CCR3 = 0;    
 }
 
+
+#ifdef USE_ONLY_CM_ONLY_MOSFET_A
+void TIM_3_Init (void)
+{
+    unsigned int temp = 0;
+
+    if (!RCC_TIM3_CLK)
+        RCC_TIM3_CLK_ON;
+
+    //Configuracion del timer.
+    //TIM3->CR1 = 0x0000;        //clk int / 1; upcounting;
+    //TIM3->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
+    TIM3->CR2 = 0x0000;
+    //TIM3->SMCR |= TIM_SMCR_SMS_2 |TIM_SMCR_SMS_1 | TIM_SMCR_TS_1 | TIM_SMCR_TS_0;    //reset mode
+    //TIM3->SMCR |= TIM_SMCR_SMS_2;    //reset mode link timer1    OJO no anda
+    // TIM3->SMCR |= TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1;    //trigger mode link timer1
+    TIM3->SMCR = 0x0000;    //
+    //TIM3->CCMR1 = 0x6000;            //CH2 output PWM mode 1
+    //  TIM3->CCMR1 = 0x0060;            //CH1 output PWM mode 1
+    TIM3->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM3->CNT < TIM3->CCR1)
+    TIM3->CCMR2 = 0x0000;            //
+    //  TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;    //CH1 enable on pin active high
+    TIM3->CCER |= TIM_CCER_CC1E;    //CH1 enable on pin active high
+    //TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
+    TIM3->ARR = DUTY_100_PERCENT;
+    TIM3->CNT = 0;
+#if defined USE_96KHZ
+    TIM3->PSC = 0;
+#elif defined USE_48KHZ
+    TIM3->PSC = 1;
+#else
+#error "Set working frequency on hard.h"
+#endif
+    
+
+    //TIM3->EGR = TIM_EGR_UG;    //generate event
+
+    //Configuracion Pines
+    //Alternate Fuction
+    //  temp = GPIOA->MODER;    //2 bits por pin
+    //  temp &= 0xFFFFCFFF;        //PA6 (alternative)
+    //  temp |= 0x00002000;
+    //  GPIOA->MODER = temp;
+
+    //Configuracion Pin Ctrol_M_A
+    temp = GPIOA->AFR[0];
+    temp &= 0xF0FFFFFF;
+    temp |= 0x01000000;    //PA6 -> AF1;
+    GPIOA->AFR[0] = temp;
+
+    // Enable timer ver UDIS
+    //TIM3->DIER |= TIM_DIER_UIE;
+    TIM3->CR1 |= TIM_CR1_CEN;
+
+    TIM3->CCR1 = 0;        
+}
+#endif
+
+#ifndef USE_ONLY_CM_ONLY_MOSFET_A
 void TIM_3_Init (void)
 {
     unsigned int temp = 0;
@@ -274,7 +333,7 @@ void TIM_3_Init (void)
     TIM3->CCR1 = DUTY_50_PERCENT;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
 #endif
 }
-
+#endif
 
 
 // void TIM_1_Init (void)
