@@ -273,6 +273,12 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send(str);
     Wait_ms(30);    
 #endif
+
+#ifdef USE_ONLY_VM_ONLY_MOSFET_A
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_VM_ONLY_MOSFET_A));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif
     
 #ifdef USE_VM_AND_CM
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_VM_AND_CM));

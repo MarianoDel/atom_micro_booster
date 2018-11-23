@@ -313,6 +313,183 @@ int main(void)
     // }
     //--- Fin Prueba tension de salida con max d fijo ----------
                 
+#ifdef USE_ONLY_VM_ONLY_MOSFET_A
+    //uso solo mosfet de TIM3, mosfet A
+    timer_standby = 2000;
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_INIT:
+            if (!timer_standby)
+            {
+                EnablePreload_MosfetA;
+                EXTIOn();
+                //si no le pongo esto puede que no arranque
+                UpdateFB(DUTY_FB_25A);
+                main_state = MAIN_VOLTAGE_MODE;
+                timer_standby = 2000;
+            }
+
+            if (sequence_ready)
+                sequence_ready_reset;
+            break;
+
+        case MAIN_VOLTAGE_MODE:
+            if (sequence_ready)
+            {
+                sequence_ready_reset;
+
+                if (undersampling < (UNDERSAMPLING_TICKS - 1))
+                    undersampling++;
+                else
+                {
+                    undersampling = 0;
+                    d = PID_roof (VOUT_SETPOINT, Vout_Sense, d, &ez1, &ez2);                    
+
+                    //tambien por cada muestra calculo el dmax_permited
+                    delta_vout = VinTicksToVoltage(Vin_Sense);                        
+                    delta_vout = (delta_vout * N_TRAFO) / 1000;
+
+                    normalized_vout = VoutTicksToVoltage(Vout_Sense);
+
+                    if (delta_vout > normalized_vout)
+                        delta_vout = delta_vout - normalized_vout;
+                    else
+                        delta_vout = 0;
+
+                    dmax_lout = UpdateDmaxLout((unsigned short)delta_vout);
+
+                    //maximos del pwm por corriente en bobina de salida
+                    //o saturacion de trafo por tension de entrada
+                    // if (dmax_vin > dmax_lout)
+                    // {
+                    //     //dmax por corriente out
+                    //     if (d > dmax_lout)
+                    //         d = dmax_lout;
+                    // }
+                    // else
+                    // {
+                        //dmax por vin
+                        if (d > dmax_vin)
+                            d = dmax_vin;
+                    // }
+                    
+                    if (d < 0)
+                    {
+                        d = 0;
+                        ez1 = 0;
+                        ez2 = 0;
+                    }
+
+                    UpdateTIM_MosfetA(d);
+                    
+                }    //cierra undersampling
+                
+            }    //cierra sequence
+
+            //proteccion de sobretension
+            if (Vout_Sense > VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT)
+            {
+                UpdateTIM_MosfetA(DUTY_NONE);
+                UpdateFB(DUTY_NONE);
+                EXTIOff();
+                LED_ON;
+                main_state = MAIN_OVERVOLTAGE;
+                Usart1Send((char *) "Overvoltage! VM\n");
+            }
+
+            //se deshabilito la int, espero que se libere la pata
+            // if ((llegue_tarde) && (!PROT_MOS))
+            // {
+            //     llegue_tarde = 0;
+            //     EXTIOn();
+            //     //MosfetA por ser One Pulse Mode, necesita ser modifcado ahora
+            //     DisablePreload_MosfetA;
+            //     UpdateTIMSync(dmax_permited);
+            //     EnablePreload_MosfetA;
+            // }
+            break;
+
+        case MAIN_OVERVOLTAGE:
+            if ((!timer_standby) && (sequence_ready))
+            {
+                sequence_ready_reset;
+                if (Vout_Sense < VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT)
+                {
+                    LED_ON;
+                    timer_standby = 2000;
+                    main_state = MAIN_INIT;
+                    Usart1Send((char *) "Reconnect...\n");
+                }
+            }
+            break;
+            
+        case MAIN_JUMPER_PROTECTED:
+            if (!timer_standby)
+            {
+                if (!STOP_JUMPER)
+                {
+                    //vuelvo a INIT
+                    main_state = MAIN_INIT;
+                }
+            }                
+            break;
+
+        case MAIN_OVERCURRENT:
+            // if ((!PROT_MOS_A) && (!PROT_MOS_B))
+            // {
+            //     if ((!timer_standby) && (STOP_JUMPER))    //solo destrabo si se coloca el Jumper y se quita
+            //     {                                         //en MAIN_JUMPER_PROTECTED
+            //         LED_OFF;
+            //         ENABLE_TIM3;
+            //         ENABLE_TIM1;
+            //         main_state = MAIN_JUMPER_PROTECTED;
+            //     }
+            // }
+            break;
+
+        default:
+            main_state = MAIN_INIT;
+            break;
+        }	//fin switch main_state
+        
+        //Cosas que no tienen tanto que ver con las muestras o el estado del programa
+        if ((STOP_JUMPER) &&
+            (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_OVERCURRENT))
+        {
+            UpdateTIMSync (0);
+            d = 0;
+            last_d = 0;
+            timer_standby = 300;    //doy minimo 300ms para reactivar
+            main_state = MAIN_JUMPER_PROTECTED;
+        }
+
+        if (!timer_standby)
+        {
+            timer_standby = 2000;
+            sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_vin: %d, dmax_lout: %d\n",
+                     vin_filtered,
+                     Vout_Sense,
+                     d,
+                     dmax_vin,
+                     dmax_lout);
+            
+            Usart1Send(s_lcd);
+        }
+
+        if (!timer_filters)
+        {
+            //espero un poco entre cada muestra de la tension
+            timer_filters = 3;
+            vin_vector[0] = Vin_Sense;
+            vin_filtered = MAFilter8(vin_vector);
+            dmax_vin = UpdateDMAX(vin_filtered);
+        }
+    }
+#endif    //USE_ONLY_CM_ONLY_MOSFET_B
+
 #ifdef USE_ONLY_CM_ONLY_MOSFET_A
     //uso solo mosfet de TIM3, mosfet A
     timer_standby = 2000;
@@ -499,7 +676,7 @@ int main(void)
         }
     }
 #endif    //USE_ONLY_CM_ONLY_MOSFET_B
-
+    
 #ifdef USE_ONLY_CM_ONLY_MOSFET_B
     //uso solo mosfet de TIM1, mosfet B
     timer_standby = 2000;
@@ -2106,6 +2283,16 @@ void Overcurrent_Shutdown (void)
 //TODO: cambiar todo lo que se pueda por MACROS
 void EXTI4_15_IRQHandler(void)
 {
+#ifdef USE_ONLY_VM_ONLY_MOSFET_A
+    //actuando el timer 3 en el mosfet A
+    LED_ON;
+    DisablePreload_MosfetA;
+    UpdateTIM_MosfetA(0);
+    EnablePreload_MosfetA;
+    LED_OFF;
+    EXTI->PR |= 0x00000010;    //4
+#endif
+
 #ifdef USE_ONLY_CM_ONLY_MOSFET_A
     //actuando el timer 3 en el mosfet A
     LED_ON;
@@ -2117,7 +2304,7 @@ void EXTI4_15_IRQHandler(void)
     LED_OFF;
     EXTI->PR |= 0x00000010;    //4
 #endif
-
+    
 #ifdef USE_ONLY_CM_ONLY_MOSFET_B
     //actuando el timer 1 en el mosfet B
     LED_ON;

@@ -55,7 +55,8 @@
 #ifdef VER_2_0
 // Tipos de Programas 
 #define CURRENT_MODE_VER_2_0
-#define USE_ONLY_CM_ONLY_MOSFET_A
+#define USE_ONLY_VM_ONLY_MOSFET_A
+// #define USE_ONLY_CM_ONLY_MOSFET_A
 // #define USE_ONLY_CM_ONLY_MOSFET_B
 // #define USE_ONLY_CM
 // #define USE_VM_AND_CM
