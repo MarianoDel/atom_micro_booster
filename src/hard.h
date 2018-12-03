@@ -28,6 +28,9 @@
 #define VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT    VOUT_300V
 #define VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT    VOUT_200V
 
+#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
+#define VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT    VIN_20V
+
 //---- Configuration for Hardware Versions -------
 #ifdef VER_2_0
 #define HARDWARE_VERSION_2_0
@@ -56,6 +59,8 @@
 // Tipos de Programas 
 #define CURRENT_MODE_VER_2_0
 #define USE_ONLY_VM_ONLY_MOSFET_A
+// #define USE_LED_IN_INT
+#define USE_LED_IN_PROT
 // #define USE_ONLY_CM_ONLY_MOSFET_A
 // #define USE_ONLY_CM_ONLY_MOSFET_B
 // #define USE_ONLY_CM
@@ -64,7 +69,10 @@
 // #define TEST_FIXED_VOUT
 #define USE_96KHZ
 // #define USE_48KHZ
-// Tipos de Hardware Utilizado
+// ---------- Tipos de Hardware Utilizado ----------
+#if (defined USE_ONLY_VM_ONLY_MOSFET_A) || (defined USE_ONLY_CM_ONLY_MOSFET_A)
+#define USE_ONLY_MOSFET_A
+#endif
 // #define WITH_OVERCURRENT_SHUTDOWN
 // #define WITH_TIM14_FB
 #define WITH_TIM1_FB
@@ -153,6 +161,8 @@
 #define VIN_30V    845
 #define VIN_25V    704
 #define VIN_20V    561    //1.81V
+#define VIN_17V    477
+
 
 // #define VOUT_200V    415
 #define VOUT_110V    151    //ajustado 05-08-18
@@ -164,8 +174,10 @@
 
 //Caracteristicas de la bobina de salida
 // #define LOUT_UHY    130    //DINL2
-#define LOUT_UHY    330    //doble bobina amarilla
-#define ILOUT       3      //DINL2 corriente un poco menor a la que satura el inductor
+// #define LOUT_UHY    330    //doble bobina amarilla
+// #define ILOUT       3      //doble bobina amarilla
+#define LOUT_UHY    1500    //POL12050 bobinado primario
+#define ILOUT       1      //POL12050
 #define TICK_PWM_NS 21
 #define N_TRAFO     18300
 #define IMAX_INPUT  25
@@ -175,7 +187,7 @@
 #define I_FOR_CALC_MILLIS (IMAX_INPUT * 1000 * 1000 / N_TRAFO)
 #define I_FOR_CALC (IMAX_INPUT * 1000 / N_TRAFO)
 #else
-#define I_FOR_CALC_MILLIS (ILOUT * 1000 * 1000)
+#define I_FOR_CALC_MILLIS (ILOUT * 1000)
 #define I_FOR_CALC (IMAX_INPUT * 1000)
 #endif
 
@@ -394,7 +406,8 @@ typedef enum
     MAIN_OVERCURRENT,
     MAIN_JUMPER_PROTECTED,
     MAIN_GO_TO_FAILURE,
-    MAIN_OVERVOLTAGE,    
+    MAIN_OVERVOLTAGE,
+    MAIN_UNDERVOLTAGE,        
     MAINS_FAILURE
 
 } main_state_t;

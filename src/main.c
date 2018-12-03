@@ -316,6 +316,9 @@ int main(void)
 #ifdef USE_ONLY_VM_ONLY_MOSFET_A
     //uso solo mosfet de TIM3, mosfet A
     timer_standby = 2000;
+#ifdef USE_LED_IN_PROT
+    LED_ON;
+#endif
     while (1)
     {
         switch (main_state)
@@ -323,12 +326,12 @@ int main(void)
         case MAIN_INIT:
             if (!timer_standby)
             {
-                EnablePreload_MosfetA;
+                d = 0;
+                UpdateTIM_MosfetA(0);                
                 EXTIOn();
                 //si no le pongo esto puede que no arranque
                 UpdateFB(DUTY_FB_25A);
                 main_state = MAIN_VOLTAGE_MODE;
-                timer_standby = 2000;
             }
 
             if (sequence_ready)
@@ -362,18 +365,18 @@ int main(void)
 
                     //maximos del pwm por corriente en bobina de salida
                     //o saturacion de trafo por tension de entrada
-                    // if (dmax_vin > dmax_lout)
-                    // {
-                    //     //dmax por corriente out
-                    //     if (d > dmax_lout)
-                    //         d = dmax_lout;
-                    // }
-                    // else
-                    // {
+                    if (dmax_vin > dmax_lout)
+                    {
+                        //dmax por corriente out
+                        if (d > dmax_lout)
+                            d = dmax_lout;
+                    }
+                    else
+                    {
                         //dmax por vin
                         if (d > dmax_vin)
                             d = dmax_vin;
-                    // }
+                    }
                     
                     if (d < 0)
                     {
@@ -394,11 +397,29 @@ int main(void)
                 UpdateTIM_MosfetA(DUTY_NONE);
                 UpdateFB(DUTY_NONE);
                 EXTIOff();
-                LED_ON;
+#ifdef USE_LED_IN_PROT
+                LED_OFF;
+#endif
                 main_state = MAIN_OVERVOLTAGE;
                 Usart1Send((char *) "Overvoltage! VM\n");
+                timer_standby = 1000;
             }
 
+            //proteccion de falta de tension
+            // if (vin_filtered < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)            
+            if (Vin_Sense < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)
+            {
+                UpdateTIM_MosfetA(DUTY_NONE);
+                UpdateFB(DUTY_NONE);
+
+#ifdef USE_LED_IN_PROT
+                LED_OFF;
+#endif
+                main_state = MAIN_UNDERVOLTAGE;
+                Usart1Send((char *) "Undervoltage! VM\n");
+                timer_standby = 4000;                
+            }
+            
             //se deshabilito la int, espero que se libere la pata
             // if ((llegue_tarde) && (!PROT_MOS))
             // {
@@ -417,8 +438,24 @@ int main(void)
                 sequence_ready_reset;
                 if (Vout_Sense < VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT)
                 {
+#ifdef USE_LED_IN_PROT
                     LED_ON;
-                    timer_standby = 2000;
+#endif
+                    main_state = MAIN_INIT;
+                    Usart1Send((char *) "Reconnect...\n");
+                }
+            }
+            break;
+
+        case MAIN_UNDERVOLTAGE:
+            if ((!timer_standby) && (sequence_ready))
+            {
+                sequence_ready_reset;
+                if (vin_filtered > VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT)
+                {
+#ifdef USE_LED_IN_PROT
+                    LED_ON;
+#endif
                     main_state = MAIN_INIT;
                     Usart1Send((char *) "Reconnect...\n");
                 }
@@ -2285,11 +2322,15 @@ void EXTI4_15_IRQHandler(void)
 {
 #ifdef USE_ONLY_VM_ONLY_MOSFET_A
     //actuando el timer 3 en el mosfet A
+#ifdef USE_LED_IN_INT    
     LED_ON;
+#endif    
     DisablePreload_MosfetA;
     UpdateTIM_MosfetA(0);
     EnablePreload_MosfetA;
+#ifdef USE_LED_IN_INT        
     LED_OFF;
+#endif    
     EXTI->PR |= 0x00000010;    //4
 #endif
 

@@ -150,7 +150,8 @@ unsigned short UpdateDmaxLout (unsigned short delta_voltage)
     if (delta_voltage > 0)
     {
         // num = I_FOR_CALC * LOUT_UHY * 1000;    //cambio para no tener decimales en el preprocesador
-        num = I_FOR_CALC_MILLIS * LOUT_UHY;    
+        num =  (ILOUT * 1000) * LOUT_UHY;
+        // num = I_FOR_CALC_MILLIS * LOUT_UHY;    
         den = delta_voltage * TICK_PWM_NS;
         num = num / den;
 
@@ -311,6 +312,18 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send(str);
     Wait_ms(30);    
 #endif
+    
+#ifdef USE_LED_IN_INT
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_LED_IN_INT));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif
+    
+#ifdef USE_LED_IN_PROT
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_LED_IN_PROT));
+    Usart1Send(str);
+    Wait_ms(30);    
+#endif    
 }
 
 //---- end of file ----//

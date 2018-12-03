@@ -213,7 +213,7 @@ void TIM_1_Init (void)
 }
 
 
-#ifdef USE_ONLY_CM_ONLY_MOSFET_A
+#ifdef USE_ONLY_MOSFET_A
 void TIM_3_Init (void)
 {
     unsigned int temp = 0;
@@ -268,9 +268,7 @@ void TIM_3_Init (void)
 
     TIM3->CCR1 = 0;        
 }
-#endif
-
-#ifndef USE_ONLY_CM_ONLY_MOSFET_A
+#else
 void TIM_3_Init (void)
 {
     unsigned int temp = 0;
