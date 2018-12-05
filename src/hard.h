@@ -176,7 +176,7 @@
 // #define LOUT_UHY    130    //DINL2
 // #define LOUT_UHY    330    //doble bobina amarilla
 // #define ILOUT       3      //doble bobina amarilla
-#define LOUT_UHY    1500    //POL12050 bobinado primario
+#define LOUT_UHY    2100    //POL12050 bobinado primario
 #define ILOUT       1      //POL12050
 #define TICK_PWM_NS 21
 #define N_TRAFO     18300

@@ -63,7 +63,7 @@ unsigned short vin_vector [SIZEOF_FILTER];
 
 //--- VARIABLES GLOBALES ---//
 volatile unsigned char current_excess = 0;
-short d = 0;
+volatile short d = 0;
 short ez1 = 0;
 short ez2 = 0;
 // unsigned short dmax = 0;
@@ -525,7 +525,7 @@ int main(void)
             dmax_vin = UpdateDMAX(vin_filtered);
         }
     }
-#endif    //USE_ONLY_CM_ONLY_MOSFET_B
+#endif    //USE_ONLY_VM_ONLY_MOSFET_A
 
 #ifdef USE_ONLY_CM_ONLY_MOSFET_A
     //uso solo mosfet de TIM3, mosfet A
@@ -2328,6 +2328,9 @@ void EXTI4_15_IRQHandler(void)
     DisablePreload_MosfetA;
     UpdateTIM_MosfetA(0);
     EnablePreload_MosfetA;
+    if (d > 10)
+        d -= 10;
+    UpdateTIM_MosfetA(d);
 #ifdef USE_LED_IN_INT        
     LED_OFF;
 #endif    
