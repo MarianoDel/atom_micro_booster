@@ -46,3 +46,21 @@
 
 ** Por el punto anterior debiera trabajar VM y luego CM segun ciclo de trabajo
 
+* Cambios a Modelo Forward - Mas estable -
+** DONE Comienzo cambios
+   CLOSED: [2018-11-26 Fri 08:57]
+
+** DONE Push Pull a Forward [4/4]
+   CLOSED: [2018-12-14 Fri 09:01]
+   - [X] Puentear bobinados primarios
+   - [X] Liberar un secundario, cablear diodo vertical
+   - [X] Agrandar inductancia bobina salida
+   - [X] Acoplar segundo mosfet en paralelo
+
+** TODO Mejorar red snubber para 600Vcc
+   - midiendo el secundario con primario en corto Lleak=56uHy
+
+** TODO Inversor con placa de potencia camilla
+
+** TODO Agrandar bobinado secundario para 350Vcc
+
