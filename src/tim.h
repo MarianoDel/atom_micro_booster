@@ -16,11 +16,21 @@
 
 //--- Exported types ---//
 //--- Exported constants ---//
+#if defined USE_FREQ_48KHz
 #define DUTY_NONE		0
 #define DUTY_5_PERCENT		50
 #define DUTY_10_PERCENT		100
 #define DUTY_50_PERCENT		500
 #define DUTY_100_PERCENT        1000
+#elif defined USE_FREQ_75KHZ
+#define DUTY_NONE		0
+#define DUTY_5_PERCENT		32
+#define DUTY_10_PERCENT		64
+#define DUTY_50_PERCENT		320
+#define DUTY_100_PERCENT        640
+#else
+#error "No freq selected n hard.h"
+#endif
 #define DUTY_FOR_DMAX           450
 
 #define DUTY_FB_25A    395    //esto es 1.17V que equivale a 25Apico en el primario

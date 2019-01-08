@@ -28,7 +28,8 @@
 #define VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT    VOUT_300V
 #define VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT    VOUT_200V
 
-#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
+// #define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
+#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_15V
 #define VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT    VIN_20V
 
 //---- Configuration for Hardware Versions -------
@@ -67,8 +68,9 @@
 // #define USE_VM_AND_CM
 // #define TEST_FIXED_D
 // #define TEST_FIXED_VOUT
-#define USE_96KHZ
-// #define USE_48KHZ
+#define USE_FREQ_75KHZ
+// #define USE_FREQ_48KHZ
+
 // ---------- Tipos de Hardware Utilizado ----------
 #if (defined USE_ONLY_VM_ONLY_MOSFET_A) || (defined USE_ONLY_CM_ONLY_MOSFET_A)
 #define USE_ONLY_MOSFET_A
@@ -162,6 +164,7 @@
 #define VIN_25V    704
 #define VIN_20V    561    //1.81V
 #define VIN_17V    477
+#define VIN_15V    423
 
 
 // #define VOUT_200V    415
@@ -176,8 +179,10 @@
 // #define LOUT_UHY    130    //DINL2
 // #define LOUT_UHY    330    //doble bobina amarilla
 // #define ILOUT       3      //doble bobina amarilla
-#define LOUT_UHY    2100    //POL12050 bobinado primario
-#define ILOUT       1      //POL12050
+// #define LOUT_UHY    2100    //POL12050 bobinado primario
+// #define ILOUT       1      //POL12050
+#define LOUT_UHY    6400    //nueva bobina ale 6.4mHy
+#define ILOUT       1      //nueva ale
 #define TICK_PWM_NS 21
 #define N_TRAFO     18300
 #define IMAX_INPUT  25

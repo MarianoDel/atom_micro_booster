@@ -302,13 +302,13 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send(str);
     Wait_ms(30);    
 #endif
-#ifdef USE_96KHZ
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_96KHZ));
+#ifdef USE_FREQ_75KHZ
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_FREQ_75KHZ));
     Usart1Send(str);
     Wait_ms(30);    
 #endif
-#ifdef USE_48KHZ
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_48KHZ));
+#ifdef USE_FREQ_48KHZ
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_FREQ_48KHZ));
     Usart1Send(str);
     Wait_ms(30);    
 #endif

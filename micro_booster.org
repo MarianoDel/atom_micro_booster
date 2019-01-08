@@ -59,6 +59,20 @@
 
 ** TODO Mejorar red snubber para 600Vcc
    - midiendo el secundario con primario en corto Lleak=56uHy
+   - cambie la red varias veces, no consigo eliminar la oscilacion
+   - probe con una red resistiva de alta tension en el mosfet
+     para ver si es un efecto que lo forma la punta de alta tension, no es asi
+   - Puse dos mosfet en paralelo para ver si no es un problema desde el primario,
+     parece que no.
+
+*** Trato de determinar los parametros de Lleak y Cdiodo
+    - Foscilacion1 = 893KHz sin red
+    - Foscilacion2 = 658KHz con cap // 470pF
+    - me da Cdiodo = 558pF (FR307 en inversa) y Lleak = 57uHy, que me coincide con la prueba de 
+      trafo en corto
+    - Entre patas del bobinado de salida tengo 12.2nF
+    - pruebo con FR307 UF5408 y MUR460, en todos los casos tengo la misma senial en los diodos
+    - el problema de capacidad lo debo tener en la salida del trafo
 
 ** TODO Inversor con placa de potencia camilla
 

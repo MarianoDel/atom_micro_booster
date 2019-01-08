@@ -317,7 +317,7 @@ int main(void)
     //uso solo mosfet de TIM3, mosfet A
     timer_standby = 2000;
 #ifdef USE_LED_IN_PROT
-    LED_ON;
+    LED_OFF;
 #endif
     while (1)
     {
@@ -332,6 +332,7 @@ int main(void)
                 //si no le pongo esto puede que no arranque
                 UpdateFB(DUTY_FB_25A);
                 main_state = MAIN_VOLTAGE_MODE;
+                LED_OFF;
             }
 
             if (sequence_ready)
@@ -398,25 +399,30 @@ int main(void)
                 UpdateFB(DUTY_NONE);
                 EXTIOff();
 #ifdef USE_LED_IN_PROT
-                LED_OFF;
+                LED_ON;
 #endif
                 main_state = MAIN_OVERVOLTAGE;
-                Usart1Send((char *) "Overvoltage! VM\n");
+                sprintf (s_lcd, "Overvoltage! VM: %d\n", Vout_Sense);
+                Usart1Send(s_lcd);
+                
                 timer_standby = 1000;
             }
 
             //proteccion de falta de tension
-            // if (vin_filtered < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)            
-            if (Vin_Sense < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)
+            if (vin_filtered < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)            
+            // if (Vin_Sense < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)
             {
                 UpdateTIM_MosfetA(DUTY_NONE);
                 UpdateFB(DUTY_NONE);
-
+                EXTIOff();
 #ifdef USE_LED_IN_PROT
-                LED_OFF;
+                LED_ON;
 #endif
                 main_state = MAIN_UNDERVOLTAGE;
-                Usart1Send((char *) "Undervoltage! VM\n");
+                // sprintf (s_lcd, "Undervoltage! VM: %d\n", Vin_Sense);
+                sprintf (s_lcd, "Undervoltage! VM: %d\n", vin_filtered);                
+                Usart1Send(s_lcd);
+
                 timer_standby = 4000;                
             }
             
@@ -438,9 +444,6 @@ int main(void)
                 sequence_ready_reset;
                 if (Vout_Sense < VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT)
                 {
-#ifdef USE_LED_IN_PROT
-                    LED_ON;
-#endif
                     main_state = MAIN_INIT;
                     Usart1Send((char *) "Reconnect...\n");
                 }
@@ -453,9 +456,6 @@ int main(void)
                 sequence_ready_reset;
                 if (vin_filtered > VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT)
                 {
-#ifdef USE_LED_IN_PROT
-                    LED_ON;
-#endif
                     main_state = MAIN_INIT;
                     Usart1Send((char *) "Reconnect...\n");
                 }
@@ -469,6 +469,7 @@ int main(void)
                 {
                     //vuelvo a INIT
                     main_state = MAIN_INIT;
+                    Usart1Send((char *) "Protect OFF\n");                    
                 }
             }                
             break;
@@ -496,10 +497,12 @@ int main(void)
             (main_state != MAIN_JUMPER_PROTECTED) &&
             (main_state != MAIN_OVERCURRENT))
         {
-            UpdateTIMSync (0);
-            d = 0;
-            last_d = 0;
-            timer_standby = 300;    //doy minimo 300ms para reactivar
+            UpdateTIM_MosfetA(DUTY_NONE);
+            UpdateFB(DUTY_NONE);
+            EXTIOff();
+            main_state = MAIN_OVERVOLTAGE;
+            Usart1Send((char *) "Protect ON\n");
+            timer_standby = 1000;
             main_state = MAIN_JUMPER_PROTECTED;
         }
 

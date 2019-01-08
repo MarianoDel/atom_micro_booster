@@ -155,14 +155,7 @@ void TIM_1_Init (void)
     TIM1->ARR = DUTY_100_PERCENT;                //cada tick 20.83ns
 
     TIM1->CNT = 0;
-#if defined USE_96KHZ
     TIM1->PSC = 0;
-#elif defined USE_48KHZ
-    TIM1->PSC = 1;
-#else
-#error "Set working frequency on hard.h"
-#endif
-
 
 #if (defined VER_1_2) || (defined VER_2_0)
 #ifdef WITH_TIM1_FB
@@ -238,14 +231,7 @@ void TIM_3_Init (void)
     //TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
     TIM3->ARR = DUTY_100_PERCENT;
     TIM3->CNT = 0;
-#if defined USE_96KHZ
     TIM3->PSC = 0;
-#elif defined USE_48KHZ
-    TIM3->PSC = 1;
-#else
-#error "Set working frequency on hard.h"
-#endif
-    
 
     //TIM3->EGR = TIM_EGR_UG;    //generate event
 
@@ -294,14 +280,7 @@ void TIM_3_Init (void)
     //TIM3->CCER |= TIM_CCER_CC2E | TIM_CCER_CC2P;    //CH2 enable on pin active high
     TIM3->ARR = DUTY_50_PERCENT;
     TIM3->CNT = 0;
-#if defined USE_96KHZ
     TIM3->PSC = 0;
-#elif defined USE_48KHZ
-    TIM3->PSC = 1;
-#else
-#error "Set working frequency on hard.h"
-#endif
-    
 
     //TIM3->EGR = TIM_EGR_UG;    //generate event
 
