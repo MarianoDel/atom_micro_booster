@@ -12,10 +12,7 @@
 
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
-#define VER_2_0    //usa control de corriente pico
-// #define VER_1_2
-// #define VER_1_1		//cambia pinout respecto VER_1_0
-// #define VER_1_0
+#define VER_2_0    //usa control por tension mas proteccion de corriente pico
 
 
 #define VOUT_SETPOINT    VOUT_200V
@@ -37,28 +34,15 @@
 #define HARDWARE_VERSION_2_0
 #define SOFTWARE_VERSION_2_0
 #endif
-#ifdef VER_1_2
-#define HARDWARE_VERSION_1_2
-#define SOFTWARE_VERSION_1_2
-#endif
-#ifdef VER_1_1
-#define HARDWARE_VERSION_1_1
-#define SOFTWARE_VERSION_1_1
-#endif
-#ifdef VER_1_0
-#define HARDWARE_VERSION_1_0
-#define SOFTWARE_VERSION_1_0
-#endif
 
 
 //---- Features Configuration ----------------
 //features are activeted here and annouced in hard.c
 // #define DEBUG_ON
 
-// SOFT para VERSIONES V1_2
+// SOFT para VERSIONES V2_0
 #ifdef VER_2_0
 // Tipos de Programas 
-#define CURRENT_MODE_VER_2_0
 #define USE_ONLY_VM_ONLY_MOSFET_A
 // #define USE_LED_IN_INT
 #define USE_LED_IN_PROT
@@ -68,8 +52,8 @@
 // #define USE_VM_AND_CM
 // #define TEST_FIXED_D
 // #define TEST_FIXED_VOUT
-#define USE_FREQ_75KHZ
-// #define USE_FREQ_48KHZ
+// #define USE_FREQ_75KHZ
+#define USE_FREQ_48KHZ
 
 // ---------- Tipos de Hardware Utilizado ----------
 #if (defined USE_ONLY_VM_ONLY_MOSFET_A) || (defined USE_ONLY_CM_ONLY_MOSFET_A)
@@ -80,33 +64,6 @@
 #define WITH_TIM1_FB
 #endif
 
-// SOFT para VERSIONES V1_2
-#ifdef VER_1_2
-// Tipos de Programas 
-#define CURRENT_MODE_VER_1_2
-// #define TEST_FIXED_D
-// #define TEST_FIXED_VOUT
-
-// Tipos de Hardware Utilizado
-#define WITH_OVERCURRENT_SHUTDOWN
-#define WITH_TIM14_FB
-// #define WITH_TIM1_FB
-#endif
-
-// SOFT para VERSIONES V1_1
-#ifdef VER_1_1
-// #define PRODUCTION_PRGRM
-// #define TEST_INT_PRGRM
-// #define TEST_ADC_AND_DMA
-// #define TEST_FIXED_D
-#define TEST_FIXED_VOUT
-#endif
-
-// SOFT para VERSIONES V1_0
-#ifdef VER_1_0
-// #define ONLY_COMMS
-#define CURRENT_MODE_VER_1_0
-#endif
 
 
 //------ Configuration for Firmware-Channels -----
@@ -124,32 +81,11 @@
 #ifdef HARDWARE_VERSION_2_0
 #define HARD "Hardware V: 2.0\n"
 #endif
-#ifdef HARDWARE_VERSION_1_2
-#define HARD "Hardware V: 1.2\n"
-#endif
-#ifdef HARDWARE_VERSION_1_1
-#define HARD "Hardware V: 1.1\n"
-#endif
-#ifdef HARDWARE_VERSION_1_0
-#define HARD "Hardware V: 1.0\n"
-#endif
 
 //--- Software Welcome Code ------------------//
 #ifdef SOFTWARE_VERSION_2_0
 #define SOFT "Software V: 2.0\n"
 #endif
-#ifdef SOFTWARE_VERSION_1_2
-#define SOFT "Software V: 1.2\n"
-#endif
-#ifdef SOFTWARE_VERSION_1_1
-#define SOFT "Software V: 1.1\n"
-#endif
-#ifdef SOFTWARE_VERSION_1_0
-#define SOFT "Software V: 1.0\n"
-#endif
-
-//--- Type of Program Announcement ----------------
-#define FEATURES    //welcome code & features are in hard.c
 
 
 //-------- Others Configurations depending on the formers ------------
@@ -252,151 +188,8 @@
 #define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
 
 //GPIOB pin7	NC
-#endif	//VER_1_2
+#endif	//VER_2_0
 
-#ifdef VER_1_2
-//GPIOA pin0	Vin_Sense
-//GPIOA pin1	Vout_Sense
-//GPIOA pin2	I_Sense
-
-//GPIOA pin3	NC
-
-//GPIOA pin4	
-#define PROT_MOS	((GPIOA->IDR & 0x0010) == 0)
-
-//GPIOA pin5
-#define PROT_OVERCURRENT ((GPIOA->IDR & 0x0020) == 0)
-
-//GPIOA pin6	para TIM3_CH1 (MOSFET_A)
-
-//GPIOA pin7	SENSE_MOSFET_A
-#define SENSE_MOSFET_A ((GPIOA->IDR & 0x0080) != 0)
-
-//GPIOB pin0    NC
-
-//GPIOB pin1	para TIM14_CH1
-
-//GPIOA pin8	para TIM1_CH1 (MOSFET_B)
-
-//GPIOA pin9
-//GPIOA pin10	usart1 tx rx
-
-//GPIOA pin11	SENSE_MOSFET_B
-#define SENSE_MOSFET_B ((GPIOA->IDR & 0x0800) != 0)
-
-//GPIOA pin12	NC
-//GPIOA pin13	NC
-//GPIOA pin14	NC
-
-//GPIOA pin15
-#define LED ((GPIOA->ODR & 0x8000) != 0)
-#define LED_ON	GPIOA->BSRR = 0x00008000
-#define LED_OFF GPIOA->BSRR = 0x80000000
-
-//GPIOB pin3	NC
-//GPIOB pin4	NC
-//GPIOB pin5	NC
-
-//GPIOB pin6
-#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
-
-//GPIOB pin7	NC
-#endif	//VER_1_2
-
-#ifdef VER_1_1
-//GPIOA pin0	Vin_Sense
-//GPIOA pin1	Vout_Sense
-//GPIOA pin2	I_Sense_MOS_A
-//GPIOA pin3	I_Sense_MOS_B
-
-//GPIOA pin4	
-#define PROT_MOS_A	((GPIOA->IDR & 0x0010) != 0)
-//GPIOA pin5	
-#define PROT_MOS_B	((GPIOA->IDR & 0x0020) != 0)
-
-//GPIOA pin6	para TIM3_CH1
-//GPIOA pin7	NC
-
-//GPIOB pin0    NC
-//GPIOB pin1	NC
-
-//GPIOA pin8	para TIM1_CH1
-
-//GPIOA pin9
-//GPIOA pin10	usart1 tx rx
-
-//GPIOA pin11	NC
-//GPIOA pin12	NC
-//GPIOA pin13	NC
-//GPIOA pin14	NC
-
-//GPIOA pin15
-#define LED ((GPIOA->ODR & 0x8000) != 0)
-#define LED_ON	GPIOA->BSRR = 0x00008000
-#define LED_OFF GPIOA->BSRR = 0x80000000
-
-//GPIOB pin3	NC
-//GPIOB pin4	NC
-//GPIOB pin5	NC
-
-//GPIOB pin6
-#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
-
-//GPIOB pin7	NC
-#endif	//VER_1_1
-
-#ifdef VER_1_0
-//GPIOA pin0	Vin_Sense
-//GPIOA pin1	Vout_Sense
-//GPIOA pin2	I_Sense
-//GPIOA pin2	para pruebas
-// #define ISENSE_ON	GPIOA->BSRR = 0x00000004
-// #define ISENSE_OFF GPIOA->BSRR = 0x00040000
-
-
-//GPIOA pin3	NC
-//GPIOA pin4	NC
-//GPIOA pin5	NC
-
-//GPIOA pin6	para TIM3_CH1 (CTRL_M_A)
-#define CTRL_M_A ((GPIOA->ODR & 0x0040) != 0)
-
-//GPIOA pin7	NC
-
-//GPIOB pin0
-#define OVERCURRENT	((GPIOB->IDR & 0x0001) == 0)
-
-//GPIOB pin1	TIM14_CH1 o TIM3_CH4 o TIM1_CH3N
-#define FB       ((GPIOB->ODR & 0x0002) != 0)
-#define FB_ON    GPIOB->BSRR = 0x00000002
-#define FB_OFF   GPIOB->BSRR = 0x00020000
-
-
-//GPIOA pin8	para TIM1_CH1 (CTRL_M_B)
-#define CTRL_M_B ((GPIOA->ODR & 0x01000) != 0)
-
-//GPIOA pin9
-//GPIOA pin10	usart1 tx rx
-
-//GPIOA pin11	NC
-//GPIOA pin12	NC
-//GPIOA pin13	NC
-//GPIOA pin14	NC
-
-//GPIOA pin15
-#define LED ((GPIOA->ODR & 0x8000) != 0)
-#define LED_ON	GPIOA->BSRR = 0x00008000
-#define LED_OFF GPIOA->BSRR = 0x80000000
-
-//GPIOB pin3	NC
-//GPIOB pin4	NC
-//GPIOB pin5	NC
-
-//GPIOB pin6
-#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
-
-//GPIOB pin7	NC
-#endif	//VER_1_0
 //------- END OF PIN CONFIG -------------------
 
 

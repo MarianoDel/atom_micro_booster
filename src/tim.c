@@ -125,7 +125,7 @@ void TIM_1_Init (void)
     //TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
     TIM1->SMCR = 0x0000;
 
-#if (defined VER_1_2) || (defined VER_2_0)
+#if (defined VER_2_0)
 #ifdef WITH_TIM1_FB
     TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
     TIM1->CCMR2 = 0x0060;            //CH3 output PWM mode 1
@@ -137,18 +137,6 @@ void TIM_1_Init (void)
     TIM1->CCER |= TIM_CCER_CC1E;
 #endif
 #endif
-
-#ifdef VER_1_1
-    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
-    TIM1->CCMR2 = 0x0000;            //
-    TIM1->CCER |= TIM_CCER_CC1E;
-#endif
-    
-#ifdef VER_1_0
-    TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)    
-    TIM1->CCMR2 = 0x0060;            //CH3 output PWM mode 1
-    TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC3E | TIM_CCER_CC3P;
-#endif    
     
     TIM1->BDTR |= TIM_BDTR_MOE;
     // TIM1->ARR = 1023;                //cada tick 20.83ns
@@ -157,40 +145,13 @@ void TIM_1_Init (void)
     TIM1->CNT = 0;
     TIM1->PSC = 0;
 
-#if (defined VER_1_2) || (defined VER_2_0)
+#if (defined VER_2_0)
 #ifdef WITH_TIM1_FB
     temp = GPIOB->AFR[0];
     temp &= 0xFFFFFF0F;
     temp |= 0x00000020;    //PB1 -> AF2
     GPIOB->AFR[0] = temp;
 #endif
-    temp = GPIOA->AFR[1];
-    temp &= 0xFFFFFFF0;
-    temp |= 0x00000002;    //PA8 -> AF2
-    GPIOA->AFR[1] = temp;
-#endif
-
-#ifdef VER_1_1
-    //Configuracion Pines
-    //Alternate Fuction
-    //  temp = GPIOA->MODER;    //2 bits por pin
-    //  temp &= 0xFFFCFFFF;        //PA8 (alternative)
-    //  temp |= 0x00020000;
-    //  GPIOA->MODER = temp;
-
-    temp = GPIOA->AFR[1];
-    temp &= 0xFFFFFFF0;
-    temp |= 0x00000002;    //PA8 -> AF2
-    GPIOA->AFR[1] = temp;    
-#endif
-    
-#ifdef VER_1_0
-    //Alternative function
-    temp = GPIOB->AFR[0];
-    temp &= 0xFFFFFF0F;
-    temp |= 0x00000020;    //PB1 -> AF2
-    GPIOB->AFR[0] = temp;
-
     temp = GPIOA->AFR[1];
     temp &= 0xFFFFFFF0;
     temp |= 0x00000002;    //PA8 -> AF2
@@ -313,37 +274,6 @@ void TIM_3_Init (void)
 #endif
 
 
-// void TIM_1_Init (void)
-// {
-// 	unsigned int temp;
-//
-// 	if (!RCC_TIM1_CLK)
-// 		RCC_TIM1_CLK_ON;
-//
-// 	//Configuracion del timer.
-// 	TIM1->CR1 |= TIM_CR1_OPM;		//clk int / 1; upcounting; one pulse
-// 	// TIM1->CR2 |= TIM_CR2_MMS_1;		//UEV -> TRG0
-// 	TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;
-// 	//TIM1->SMCR = 0x0000;
-// 	TIM1->CCMR1 = 0x0000;			//
-// 	TIM1->CCMR2 = 0x0000;			//
-// 	TIM1->CCER = 0x0000;
-// 	//TIM1->ARR = 1024 - 172;	//cada tick 20.83ns; ok la int pero mide mal
-// 	TIM1->ARR = 1023;	//cada tick 20.83ns; ok pero mide mal + periodo en cycles 7.5 / 14MHz = 535ns
-// 	TIM1->CNT = 0;
-// 	TIM1->PSC = 0;
-//
-// 	// Enable timer ver UDIS
-// 	//TIM1->DIER |= TIM_DIER_UIE;
-// 	TIM1->CR1 |= TIM_CR1_CEN;
-//
-// 	//Activacion del pin Ctrol_M_B
-// 	temp = GPIOA->AFR[1];
-// 	temp &= 0xFFFFFFF0;
-// 	temp |= 0x00000002;	//PA8 -> AF2
-// 	GPIOA->AFR[1] = temp;
-// }
-
 void TIM3_IRQHandler (void)	//1 ms
 {
     /*
@@ -371,44 +301,6 @@ void TIM3_IRQHandler (void)	//1 ms
         TIM3->SR = 0x00;
 }
 
-
-// void TIM_3_Init (void)
-// {
-// 	unsigned int temp;
-//
-// 	if (!RCC_TIM3_CLK)
-// 		RCC_TIM3_CLK_ON;
-//
-// 	//Configuracion del timer.
-// 	TIM3->CR1 = 0x00;		//clk int / 1; upcounting
-// 	TIM3->CR2 |= TIM_CR2_MMS_1;		//UEV -> TRG0
-// #if (defined VER_1_0) || (defined VER_1_1)
-// 	TIM3->CCMR1 = 0x0060;			//CH1 PWM mode 2
-// 	TIM3->CCMR2 = 0x6000;			//CH4 PWM mode 2
-// 	TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC4E;	//CH1 CH4 enable on pin
-// 	TIM3->ARR = 1023;		//para probar parte baja de placa mosfet (comparar con placa china)
-// 	TIM3->CNT = 0;
-// 	TIM3->PSC = 0;
-// 	//TIM3->EGR = TIM_EGR_UG;
-//
-// 	// Enable timer ver UDIS
-// 	//TIM3->DIER |= TIM_DIER_UIE;
-// 	TIM3->CR1 |= TIM_CR1_CEN;
-//
-// 	//Configuracion Pin Ctrol_M_A
-// 	temp = GPIOA->AFR[0];
-// 	temp &= 0xF0FFFFFF;
-// 	temp |= 0x01000000;	//PA6 -> AF1
-// 	GPIOA->AFR[0] = temp;
-//
-// 	//Configuracion Pin PB1
-// 	temp = GPIOB->AFR[0];
-// 	temp &= 0xFFFFFF0F;
-// 	temp |= 0x00000010;	//PB1 -> AF1
-// 	GPIOB->AFR[0] = temp;
-// #endif
-// }
-
 void TIM_6_Init (void)
 {
     if (!RCC_TIM6_CLK)
@@ -428,7 +320,6 @@ void TIM14_IRQHandler (void)	//100uS
         //bajar flag
         TIM14->SR = 0x00;
 }
-
 
 void TIM_14_Init (void)
 {
@@ -465,7 +356,6 @@ void TIM16_IRQHandler (void)	//es one shoot
         TIM16->SR = 0x00;
 }
 
-
 void TIM_16_Init (void)
 {
     if (!RCC_TIM16_CLK)
@@ -501,13 +391,11 @@ void TIM16Disable (void)
     TIM16->CR1 &= ~TIM_CR1_CEN;
 }
 
-
 void TIM17_IRQHandler (void)	//200uS
 {
     if (TIM17->SR & 0x01)
         TIM17->SR = 0x00;		//bajar flag
 }
-
 
 void TIM_17_Init (void)
 {

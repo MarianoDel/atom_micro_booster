@@ -248,14 +248,6 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send("Current Mode for Hwd ver 2.0\n");
     Wait_ms(30);    
 #endif
-#ifdef CURRENT_MODE_VER_1_2
-    Usart1Send("Current Mode for Hwd ver 1.2\n");
-    Wait_ms(30);    
-#endif
-#ifdef CURRENT_MODE_VER_1_0
-    Usart1Send("Current Mode for Hwd ver 1.0\n");
-    Wait_ms(30);    
-#endif
     
 #ifdef USE_ONLY_CM
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_CM));

@@ -16,7 +16,7 @@
 
 //--- Exported types ---//
 //--- Exported constants ---//
-#if defined USE_FREQ_48KHz
+#if defined USE_FREQ_48KHZ
 #define DUTY_NONE		0
 #define DUTY_5_PERCENT		50
 #define DUTY_10_PERCENT		100

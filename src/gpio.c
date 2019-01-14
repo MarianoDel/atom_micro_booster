@@ -56,7 +56,7 @@ void GPIO_Config (void)
     //10: Pull-down
     //11: Reserved
 
-#if (defined VER_1_2) || (defined VER_2_0)
+#if (defined VER_2_0)
     //--- GPIO A ---//
     if (!GPIOA_CLK)
         GPIOA_CLK_ON;
@@ -170,218 +170,11 @@ void GPIO_Config (void)
     NVIC_SetPriority(EXTI4_15_IRQn, 2);    
 #endif    
 
-#endif    //end ver_1_2 and ver_2_0
-
-#ifdef VER_1_1
-    //--- GPIO A ---//
-    if (!GPIOA_CLK)
-        GPIOA_CLK_ON;
-
-    temp = GPIOA->MODER;	//2 bits por pin
-    temp &= 0x3FC0C000;		//PA0 PA1 PA2 PA3 analog input; PA4 PA5 input; PA6 alternate function;
-    temp |= 0x402A20FF;		//PA8 PA9 PA10 alterantive function; PA15 output
-    GPIOA->MODER = temp;
-
-    temp = GPIOA->OTYPER;	//1 bit por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOA->OTYPER = temp;
-
-    temp = GPIOA->OSPEEDR;	//2 bits por pin
-    temp &= 0x3FC03FFF;
-    temp |= 0x00000000;		//low speed
-    GPIOA->OSPEEDR = temp;
-
-    temp = GPIOA->PUPDR;	//2 bits por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;		//pull down pin1 para pruebas
-    GPIOA->PUPDR = temp;
-
-    //Alternate Fuction for GPIOA
-    // GPIOA->AFR[0] = 0x00001100;	//PA2 -> AF1; PA3 -> AF1;
-
-    //--- GPIO B ---//
-#ifdef GPIOB_ENABLE
-    if (!GPIOB_CLK)
-        GPIOB_CLK_ON;
-
-    temp = GPIOB->MODER;	//2 bits por pin
-    temp &= 0xFFFFCFF0;		//PB0 input; PB1 alternative; PB6 input
-    temp |= 0x00000008;
-    GPIOB->MODER = temp;
-
-    temp = GPIOB->OTYPER;	//1 bit por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOB->OTYPER = temp;
-
-    temp = GPIOB->OSPEEDR;	//2 bits por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;		//low speed
-    GPIOB->OSPEEDR = temp;
-
-    temp = GPIOB->PUPDR;	//2 bits por pin
-    temp &= 0xFFFFCFFC;		//PB0 PB6 pull up
-    temp |= 0x00001001;
-    GPIOB->PUPDR = temp;
-
-    //Alternate Fuction for GPIOB
-    //GPIOB->AFR[0] = 0x00010000;	//PB4 -> AF1 enable pin on tim.c
-#endif
-
-#ifdef GPIOF_ENABLE
-
-    //--- GPIO F ---//
-    if (!GPIOF_CLK)
-        GPIOF_CLK_ON;
-
-    temp = GPIOF->MODER;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->MODER = temp;
-
-    temp = GPIOF->OTYPER;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->OTYPER = temp;
-
-    temp = GPIOF->OSPEEDR;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->OSPEEDR = temp;
-
-    temp = GPIOF->PUPDR;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->PUPDR = temp;
-
-#endif
-
-
-    //Interrupt en PA4 y PA5
-    if (!SYSCFG_CLK)
-        SYSCFG_CLK_ON;
-
-    SYSCFG->EXTICR[1] = 0x00000000; //Select Port A & Pin4 Pin5  external interrupt
-    EXTI->IMR |= 0x00000030; 			//Corresponding mask bit for interrupts EXTI4 EXTI5
-    EXTI->EMR |= 0x00000000; 			//Corresponding mask bit for events
-    EXTI->RTSR |= 0x00000030; 			//Interrupt line on rising edge
-    EXTI->FTSR |= 0x00000000; 			//Interrupt line on falling edge
-
-    NVIC_EnableIRQ(EXTI4_15_IRQn);
-    NVIC_SetPriority(EXTI4_15_IRQn, 2);
-
-#endif    //end ver_1_1
-
-#ifdef VER_1_0
-    //--- GPIO A ---//
-    if (!GPIOA_CLK)
-        GPIOA_CLK_ON;
-
-    temp = GPIOA->MODER;	//2 bits por pin
-    temp &= 0x3FC0CFC0;		//PA0 PA1 PA2 analog input; PA6 alternate function;
-                                //PA8 PA9 PA10 alternative function; PA15 out
-    // temp |= 0x402A201F;		//para pruebas de PA2
-    // temp |= 0x4029203F;		//para pruebas PA8
-    temp |= 0x402A203F;		//original
-    GPIOA->MODER = temp;
-
-    temp = GPIOA->OTYPER;	//1 bit por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOA->OTYPER = temp;
-
-    temp = GPIOA->OSPEEDR;	//2 bits por pin
-    temp &= 0x3FC03FFF;
-    temp |= 0x00000000;		//low speed
-    GPIOA->OSPEEDR = temp;
-
-    temp = GPIOA->PUPDR;	//2 bits por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;		//pull down pin1 para pruebas
-    GPIOA->PUPDR = temp;
-
-    //Alternate Fuction for GPIOA
-    // GPIOA->AFR[0] = 0x00001100;	//PA2 -> AF1; PA3 -> AF1;
-
-    //--- GPIO B ---//
-#ifdef GPIOB_ENABLE
-    if (!GPIOB_CLK)
-        GPIOB_CLK_ON;
-
-    temp = GPIOB->MODER;	//2 bits por pin
-    // temp &= 0xFFFFCFF0;		//PB0 input; PB1 alternative; PB6 input
-    temp &= 0xFFFFCFF0;		//PB0 input; PB1 output; PB6 input    
-    temp |= 0x00000004;
-    GPIOB->MODER = temp;
-
-    temp = GPIOB->OTYPER;	//1 bit por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOB->OTYPER = temp;
-
-    temp = GPIOB->OSPEEDR;	//2 bits por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;		//low speed
-    GPIOB->OSPEEDR = temp;
-
-    temp = GPIOB->PUPDR;	//2 bits por pin
-    temp &= 0xFFFFCFFC;		//PB0 PB6 pull up
-    temp |= 0x00001001;
-    GPIOB->PUPDR = temp;
-
-    //Alternate Fuction for GPIOB
-    //GPIOB->AFR[0] = 0x00010000;	//PB4 -> AF1 enable pin on tim.c
-#endif
-
-#ifdef GPIOF_ENABLE
-
-    //--- GPIO F ---//
-    if (!GPIOF_CLK)
-        GPIOF_CLK_ON;
-
-    temp = GPIOF->MODER;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->MODER = temp;
-
-    temp = GPIOF->OTYPER;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->OTYPER = temp;
-
-    temp = GPIOF->OSPEEDR;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->OSPEEDR = temp;
-
-    temp = GPIOF->PUPDR;
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
-    GPIOF->PUPDR = temp;
-
-#endif
-
-
-    //Interrupt en PB0
-    if (!SYSCFG_CLK)
-        SYSCFG_CLK_ON;
-
-    SYSCFG->EXTICR[0] = 0x00000000; //Select Port B & Pin 0 external interrupt
-    // EXTI->IMR |= 0x00000001; 			//Corresponding mask bit for interrupts EXTI0
-    EXTI->EMR |= 0x00000000; 			//Corresponding mask bit for events
-    EXTI->RTSR |= 0x00000000; 			//Pin 0 Interrupt line on rising edge
-    EXTI->FTSR |= 0x00000001; 			//Pin 0 Interrupt line on falling edge
-
-    NVIC_EnableIRQ(EXTI0_1_IRQn);
-    NVIC_SetPriority(EXTI0_1_IRQn, 6);
-
-#endif    //end ver_1_0
-
+#endif    //end of ver_2_0
 }
 
 
-#if (defined VER_1_2) || (defined VER_2_0)
+#if (defined VER_2_0)
 #ifdef WITH_OVERCURRENT_SHUTDOWN
 inline void EXTIOff (void)
 {
@@ -403,31 +196,6 @@ inline void EXTIOn (void)
     EXTI->IMR |= 0x00000010;
 }
 #endif
-#endif    //ver 1.2 or ver 2.0
-
-
-#ifdef VER_1_1
-inline void EXTIOff (void)
-{
-    EXTI->IMR &= ~0x00000030;
-}
-
-inline void EXTIOn (void)
-{
-    EXTI->IMR |= 0x00000030;
-}
-#endif
-
-#ifdef VER_1_0
-inline void EXTIOff (void)
-{
-    EXTI->IMR &= ~0x00000001;
-}
-
-inline void EXTIOn (void)
-{
-    EXTI->IMR |= 0x00000001;
-}
-#endif
+#endif    //end of ver 2.0
 
 //--- end of file ---//
