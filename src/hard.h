@@ -38,7 +38,7 @@
 
 //---- Features Configuration ----------------
 //features are activeted here and annouced in hard.c
-// #define DEBUG_ON
+#define FEATURES
 
 // SOFT para VERSIONES V2_0
 #ifdef VER_2_0
