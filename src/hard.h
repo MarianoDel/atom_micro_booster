@@ -43,7 +43,8 @@
 // SOFT para VERSIONES V2_0
 #ifdef VER_2_0
 // Tipos de Programas 
-#define USE_ONLY_VM_ONLY_MOSFET_A
+#define USE_FORWARD_MODE
+// #define USE_PUSH_PULL_MODE
 // #define USE_LED_IN_INT
 #define USE_LED_IN_PROT
 // #define USE_ONLY_CM_ONLY_MOSFET_A
@@ -52,11 +53,11 @@
 // #define USE_VM_AND_CM
 // #define TEST_FIXED_D
 // #define TEST_FIXED_VOUT
-// #define USE_FREQ_75KHZ
-#define USE_FREQ_48KHZ
+#define USE_FREQ_75KHZ
+// #define USE_FREQ_48KHZ
 
 // ---------- Tipos de Hardware Utilizado ----------
-#if (defined USE_ONLY_VM_ONLY_MOSFET_A) || (defined USE_ONLY_CM_ONLY_MOSFET_A)
+#ifdef USE_FORWARD_MODE
 #define USE_ONLY_MOSFET_A
 #endif
 // #define WITH_OVERCURRENT_SHUTDOWN
@@ -257,6 +258,7 @@ unsigned short UpdateDMAXSF (unsigned short);
 unsigned short UpdateDmaxLout (unsigned short);
 unsigned short VoutTicksToVoltage (unsigned short);
 unsigned short VinTicksToVoltage (unsigned short);
+unsigned short Hard_GetDmaxLout (unsigned short, unsigned short);
 void WelcomeCodeFeatures (char *);
     
 #endif /* _HARD_H_ */

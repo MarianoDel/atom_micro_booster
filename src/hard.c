@@ -222,6 +222,26 @@ unsigned short VinTicksToVoltage (unsigned short sample_adc)
     return (unsigned short) num;
 }
 
+
+//Con la tension de entrada y salida calcula el maximo periodo permitido
+unsigned short Hard_GetDmaxLout (unsigned short vin, unsigned short vout)
+{
+    unsigned int delta_vout = 0;
+    unsigned short normalized_vout = 0;
+
+    delta_vout = VinTicksToVoltage(vin);
+    delta_vout = (delta_vout * N_TRAFO) / 1000;
+
+    normalized_vout = VoutTicksToVoltage(vout);
+    
+    if (delta_vout > normalized_vout)
+        delta_vout = delta_vout - normalized_vout;
+    else
+        delta_vout = 0;
+    
+    return UpdateDmaxLout((unsigned short)delta_vout);
+}
+
 void WelcomeCodeFeatures (char * str)
 {
 #ifdef TEST_INT_PRGRM
@@ -249,32 +269,14 @@ void WelcomeCodeFeatures (char * str)
     Wait_ms(30);    
 #endif
     
-#ifdef USE_ONLY_CM
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_CM));
+#ifdef USE_FORWARD_MODE
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_FORWARD_MODE));
     Usart1Send(str);
     Wait_ms(30);    
 #endif
 
-#ifdef USE_ONLY_CM_ONLY_MOSFET_B
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_CM_ONLY_MOSFET_B));
-    Usart1Send(str);
-    Wait_ms(30);    
-#endif
-
-#ifdef USE_ONLY_CM_ONLY_MOSFET_A
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_CM_ONLY_MOSFET_A));
-    Usart1Send(str);
-    Wait_ms(30);    
-#endif
-
-#ifdef USE_ONLY_VM_ONLY_MOSFET_A
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_ONLY_VM_ONLY_MOSFET_A));
-    Usart1Send(str);
-    Wait_ms(30);    
-#endif
-    
-#ifdef USE_VM_AND_CM
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_VM_AND_CM));
+#ifdef USE_PUSH_PULL_MODE
+    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_PUSH_PULL_MODE));
     Usart1Send(str);
     Wait_ms(30);    
 #endif
@@ -284,6 +286,7 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send(str);
     Wait_ms(30);    
 #endif
+
 #ifdef WITH_TIM14_FB
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(WITH_TIM14_FB));
     Usart1Send(str);
@@ -294,11 +297,13 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send(str);
     Wait_ms(30);    
 #endif
+
 #ifdef USE_FREQ_75KHZ
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_FREQ_75KHZ));
     Usart1Send(str);
     Wait_ms(30);    
 #endif
+
 #ifdef USE_FREQ_48KHZ
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_FREQ_48KHZ));
     Usart1Send(str);
