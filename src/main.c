@@ -82,11 +82,10 @@ unsigned short last_d = 0;
 volatile unsigned short wait_ms_var = 0;
 volatile unsigned short timer_standby;
 //volatile unsigned char display_timer;
-volatile unsigned char timer_meas;
+volatile unsigned short timer_meas;
 volatile unsigned char timer_filters = 0;
 
 volatile unsigned short dmax_permited = 0;
-volatile unsigned char llegue_tarde = 0;
 // volatile unsigned short secs = 0;
 // volatile unsigned char hours = 0;
 // volatile unsigned char minutes = 0;
@@ -98,7 +97,6 @@ volatile unsigned char llegue_tarde = 0;
 
 //--- FUNCIONES DEL MODULO ---//
 void TimingDelay_Decrement (void);
-void Overcurrent_Shutdown (void);
 
 #ifdef VER_2_0
 // ------- para el LM311 -------
@@ -207,6 +205,9 @@ int main(void)
     
     TIM_1_Init ();	   //lo utilizo para mosfet Ctrol_M_B y para FB si esta definido en hard.h
     TIM_3_Init ();	   //lo utilizo para mosfet Ctrol_M_A y para synchro ADC
+
+    EnablePreload_MosfetA;
+    EnablePreload_MosfetB;
 
 #ifdef WITH_TIM14_FB
     TIM_14_Init ();        //lo uso para FB
@@ -415,17 +416,6 @@ int main(void)
                 
             }    //cierra sequence
 
-            
-            //se deshabilito la int, espero que se libere la pata
-            // if ((llegue_tarde) && (!PROT_MOS))
-            // {
-            //     llegue_tarde = 0;
-            //     EXTIOn();
-            //     //MosfetA por ser One Pulse Mode, necesita ser modifcado ahora
-            //     DisablePreload_MosfetA;
-            //     UpdateTIMSync(dmax_permited);
-            //     EnablePreload_MosfetA;
-            // }
             break;
 
         case MAIN_OVERVOLTAGE:
@@ -457,13 +447,21 @@ int main(void)
             {
                 if (!STOP_JUMPER)
                 {
-                    //vuelvo a INIT
-                    main_state = MAIN_INIT;
-                    Usart1Send((char *) "Protect OFF\n");                    
+                    main_state = MAIN_JUMPER_PROTECT_OFF;
+                    timer_standby = 400;
                 }
             }                
             break;
 
+        case MAIN_JUMPER_PROTECT_OFF:
+            if (!timer_standby)
+            {
+                //vuelvo a INIT
+                main_state = MAIN_INIT;
+                Usart1Send((char *) "Protect OFF\n");                    
+            }                
+            break;
+            
         case MAIN_OVERCURRENT:
             // if ((!PROT_MOS_A) && (!PROT_MOS_B))
             // {
@@ -485,6 +483,7 @@ int main(void)
         //Cosas que no tienen tanto que ver con las muestras o el estado del programa
         if ((STOP_JUMPER) &&
             (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_JUMPER_PROTECT_OFF) &&            
             (main_state != MAIN_OVERCURRENT))
         {
             UpdateTIM_MosfetA(DUTY_NONE);
@@ -535,9 +534,9 @@ int main(void)
             }
         }
 
-        if (!timer_standby)
+        if (!timer_meas)
         {
-            timer_standby = 2000;
+            timer_meas = 2000;
             sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_vin: %d, dmax_lout: %d\n",
                      vin_filtered,
                      Vout_Sense,
@@ -559,9 +558,12 @@ int main(void)
     }
 #endif    //USE_FORWARD_MODE
 
-#ifdef USE_ONLY_CM_ONLY_MOSFET_A
-    //uso solo mosfet de TIM3, mosfet A
+#ifdef USE_PUSH_PULL_VOLTAGE_MODE
+    //uso los dos mosfets, TIM1 mosfet B, TIM3 mosfet A
     timer_standby = 2000;
+#ifdef USE_LED_IN_PROT
+    LED_OFF;
+#endif
     while (1)
     {
         switch (main_state)
@@ -569,102 +571,31 @@ int main(void)
         case MAIN_INIT:
             if (!timer_standby)
             {
-                EnablePreload_MosfetA;
+                d = 0;
+                UpdateTIMSync(0);
                 EXTIOn();
                 //si no le pongo esto puede que no arranque
-                dmax_permited = 450;
-                UpdateTIM_MosfetA(dmax_permited);
-                UpdateFB(DUTY_NONE);
-                main_state = MAIN_CURRENT_MODE;
-                timer_standby = 2000;
+                UpdateFB(DUTY_FB_25A);
+                main_state = MAIN_SOFT_START;
+                LED_OFF;
             }
 
             if (sequence_ready)
                 sequence_ready_reset;
             break;
 
-        case MAIN_CURRENT_MODE:
+        case MAIN_SOFT_START:
             if (sequence_ready)
-            {
                 sequence_ready_reset;
 
-                if (undersampling < (UNDERSAMPLING_TICKS - 1))
-                    undersampling++;
-                else
-                {
-                    undersampling = 0;
-                    d = PID_roof (VOUT_SETPOINT, Vout_Sense, d, &ez1, &ez2);                    
-                    
-                    if (d < 0)
-                    {
-                        //me pase de tension voy a voltage mode para tener buena regulacion en vacio
-                        UpdateFB(DUTY_NONE);
-                        d = 0;
-                        ez1 = 0;
-                        ez2 = 0;
-                    }
-                    else
-                    {
-                        //seteo FB y espero int del lazo de corriente
-                        if (d > DUTY_FB_25A)
-                            d = DUTY_FB_25A;
+            UpdateTIMSync(DUTY_FOR_DMAX);
+            main_state = MAIN_VOLTAGE_MODE;
+            break;
+            
+        case MAIN_VOLTAGE_MODE:
+            if (sequence_ready)
+                sequence_ready_reset;
 
-                        //por ahora no seteo d
-                        UpdateFB(d);
-                    }
-                }
-                
-                //tambien por cada muestra calculo el dmax_permited
-                delta_vout = VinTicksToVoltage(Vin_Sense);                        
-                delta_vout = (delta_vout * N_TRAFO) / 1000;
-
-                normalized_vout = VoutTicksToVoltage(Vout_Sense);
-
-                if (delta_vout > normalized_vout)
-                    delta_vout = delta_vout - normalized_vout;
-                else
-                    delta_vout = 0;
-
-                dmax_lout = UpdateDmaxLout((unsigned short)delta_vout);
-                // if (dmax_vin > dmax_lout)
-                // {
-                //     //dmax por corriente out
-                //     EXTIOff();
-                //     dmax_permited = dmax_lout;
-                //     EXTIOn();
-                // }
-                // else
-                // {
-                //     //dmax por vin
-                //     EXTIOff();
-                //     dmax_permited = dmax_vin;
-                //     EXTIOn();
-                // }
-                //fin calculo dmax_permited
-                
-            }    //cierra sequence
-
-            //proteccion de sobretension
-            if (Vout_Sense > VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT)
-            {
-                UpdateTIM_MosfetA(DUTY_NONE);
-                UpdateFB(DUTY_NONE);
-                EXTIOff();
-                LED_ON;
-                main_state = MAIN_OVERVOLTAGE;
-                Usart1Send((char *) "Overvoltage! CM\n");
-            }
-
-            //se deshabilito la int, espero que se libere la pata
-            // if ((llegue_tarde) && (!PROT_MOS))
-            // {
-            //     llegue_tarde = 0;
-            //     EXTIOn();
-            //     //MosfetA por ser One Pulse Mode, necesita ser modifcado ahora
-            //     DisablePreload_MosfetA;
-            //     UpdateTIMSync(dmax_permited);
-            //     EnablePreload_MosfetA;
-            // }
             break;
 
         case MAIN_OVERVOLTAGE:
@@ -673,9 +604,19 @@ int main(void)
                 sequence_ready_reset;
                 if (Vout_Sense < VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT)
                 {
-                    LED_ON;
-                    timer_standby = 2000;
-                    // main_state = MAIN_SOFT_START;
+                    main_state = MAIN_INIT;
+                    Usart1Send((char *) "Reconnect...\n");
+                }
+            }
+            break;
+
+        case MAIN_UNDERVOLTAGE:
+            if ((!timer_standby) && (sequence_ready))
+            {
+                sequence_ready_reset;
+                if (vin_filtered > VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT)
+                {
+                    main_state = MAIN_INIT;
                     Usart1Send((char *) "Reconnect...\n");
                 }
             }
@@ -686,9 +627,18 @@ int main(void)
             {
                 if (!STOP_JUMPER)
                 {
-                    //vuelvo a INIT
-                    main_state = MAIN_INIT;
+                    main_state = MAIN_JUMPER_PROTECT_OFF;
+                    timer_standby = 400;
                 }
+            }                
+            break;
+
+        case MAIN_JUMPER_PROTECT_OFF:
+            if (!timer_standby)
+            {
+                //vuelvo a INIT
+                main_state = MAIN_INIT;
+                Usart1Send((char *) "Protect OFF\n");                    
             }                
             break;
 
@@ -713,18 +663,67 @@ int main(void)
         //Cosas que no tienen tanto que ver con las muestras o el estado del programa
         if ((STOP_JUMPER) &&
             (main_state != MAIN_JUMPER_PROTECTED) &&
+            (main_state != MAIN_JUMPER_PROTECT_OFF) &&            
             (main_state != MAIN_OVERCURRENT))
         {
-            UpdateTIMSync (0);
-            d = 0;
-            last_d = 0;
-            timer_standby = 300;    //doy minimo 300ms para reactivar
+            UpdateTIMSync(DUTY_NONE);
+            UpdateFB(DUTY_NONE);
+            EXTIOff();
+            main_state = MAIN_OVERVOLTAGE;
+            Usart1Send((char *) "Protect ON\n");
+            timer_standby = 1000;
             main_state = MAIN_JUMPER_PROTECTED;
         }
 
-        if (!timer_standby)
+        //si esta corriendo reviso tension de salida y entrada
+        if ((main_state == MAIN_SOFT_START) ||
+            (main_state == MAIN_VOLTAGE_MODE))
         {
-            timer_standby = 2000;
+            //proteccion de sobretension
+            if (Vout_Sense > VOUT_OVERVOLTAGE_THRESHOLD_TO_DISCONNECT)
+            {
+                UpdateTIMSync(DUTY_NONE);
+                UpdateFB(DUTY_NONE);
+                EXTIOff();
+#ifdef USE_LED_IN_PROT
+                LED_ON;
+#endif
+                main_state = MAIN_OVERVOLTAGE;
+                sprintf (s_lcd, "Overvoltage! Vout: %d d: %d\n", Vout_Sense, d);
+                Usart1Send(s_lcd);
+                
+                timer_standby = 1000;
+            }
+
+            //proteccion de falta de tension
+            if (vin_filtered < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)            
+            // if (Vin_Sense < VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT)
+            {
+                UpdateTIMSync(DUTY_NONE);
+                UpdateFB(DUTY_NONE);
+                EXTIOff();
+#ifdef USE_LED_IN_PROT
+                LED_ON;
+#endif
+                main_state = MAIN_UNDERVOLTAGE;
+                // sprintf (s_lcd, "Undervoltage! VM: %d\n", Vin_Sense);
+                sprintf (s_lcd, "Undervoltage! Vin: %d d: %d\n", vin_filtered, d);
+                Usart1Send(s_lcd);
+
+                timer_standby = 4000;                
+            }
+        }
+
+        if (current_excess)
+        {
+            current_excess = 0;
+            Usart1Send((char *) "overcurrent\n");
+            main_state = MAIN_OVERCURRENT;
+        }
+
+        if (!timer_meas)
+        {
+            timer_meas = 2000;
             sprintf (s_lcd, "Vin: %d, Vout: %d, d: %d, dmax_vin: %d, dmax_lout: %d\n",
                      vin_filtered,
                      Vout_Sense,
@@ -744,10 +743,11 @@ int main(void)
             dmax_vin = UpdateDMAX(vin_filtered);
         }
     }
-#endif    //USE_ONLY_CM_ONLY_MOSFET_B
+#endif    //USE_PUSH_PULL_VOLTAGE_MODE
     
-#endif    //current mode ver 2.0
-//---------- Fin Test CURRENT_MODE_VER_2_0 --------//
+    
+#endif    //ver 2.0
+//---------- Fin VER_2_0 --------//
 
     return 0;
 }
@@ -808,6 +808,40 @@ void EXTI4_15_IRQHandler(void)
     if (d > 10)
         d -= 10;
     UpdateTIM_MosfetA(d);
+#ifdef USE_LED_IN_INT        
+    LED_OFF;
+#endif    
+    EXTI->PR |= 0x00000010;    //4
+#endif
+#ifdef USE_PUSH_PULL_MODE
+    //actuando el timer1 en mosfet B y timer3 en el mosfet A
+#ifdef USE_LED_IN_INT    
+    LED_ON;
+#endif    
+    DisablePreload_MosfetA;
+    DisablePreload_MosfetB;
+    UpdateTIMSync(0);
+    EnablePreload_MosfetA;
+    EnablePreload_MosfetB;
+    if (d > 10)
+        d -= 10;
+    UpdateTIMSync(d);
+#ifdef USE_LED_IN_INT        
+    LED_OFF;
+#endif    
+    EXTI->PR |= 0x00000010;    //4
+#endif
+#ifdef USE_PUSH_PULL_VOLTAGE_MODE
+    //actuando el timer1 en mosfet B y timer3 en el mosfet A
+#ifdef USE_LED_IN_INT    
+    LED_ON;
+#endif    
+    DisablePreload_MosfetA;
+    DisablePreload_MosfetB;
+    UpdateTIMSync(0);
+    EnablePreload_MosfetA;
+    EnablePreload_MosfetB;
+    current_excess = 1;
 #ifdef USE_LED_IN_INT        
     LED_OFF;
 #endif    

@@ -20,18 +20,22 @@
 #define DUTY_NONE		0
 #define DUTY_5_PERCENT		50
 #define DUTY_10_PERCENT		100
+#define DUTY_FOR_DMAX           450
 #define DUTY_50_PERCENT		500
+#define DUTY_50_PERCENT_PLUS_ONE		501
 #define DUTY_100_PERCENT        1000
 #elif defined USE_FREQ_75KHZ
 #define DUTY_NONE		0
 #define DUTY_5_PERCENT		32
 #define DUTY_10_PERCENT		64
+#define DUTY_FOR_DMAX           288
 #define DUTY_50_PERCENT		320
+#define DUTY_50_PERCENT_PLUS_ONE		321
 #define DUTY_100_PERCENT        640
 #else
-#error "No freq selected n hard.h"
+#error "No freq selected in hard.h"
 #endif
-#define DUTY_FOR_DMAX           450
+
 
 #define DUTY_FB_25A    395    //esto es 1.17V que equivale a 25Apico en el primario
 
@@ -72,7 +76,7 @@
 #define RCC_TIM17_CLK_ON 	RCC->APB2ENR |= 0x00040000
 #define RCC_TIM17_CLK_OFF 	RCC->APB2ENR &= ~0x00040000
 
-#ifdef USE_ONLY_MOSFET_A
+#if defined USE_ONLY_MOSFET_A
 #define DisablePreload_MosfetA    (TIM3->CCMR1 &= ~TIM_CCMR1_OC1PE)
 #define EnablePreload_MosfetA    (TIM3->CCMR1 |= TIM_CCMR1_OC1PE)
 #define UpdateTIM_MosfetA(X)    (TIM3->CCR1 = (X))
@@ -80,7 +84,7 @@
     TIM1->CCR1 = (X); \
     TIM3->CCR1 = (X); \
     } while(0)
-#else
+#elif defined USE_MOSFET_A_AND_B
 #define EnablePreload_MosfetA    (TIM3->CR1 |= TIM_CR1_ARPE)
 #define DisablePreload_MosfetA    (TIM3->CR1 &= ~TIM_CR1_ARPE)
 #define UpdateTIM_MosfetA(X)    (TIM3->ARR = DUTY_50_PERCENT + (X))
@@ -88,6 +92,8 @@
     TIM1->CCR1 = (X);                  \
     TIM3->ARR = DUTY_50_PERCENT + (X); \
     } while(0)
+#else
+#error "no selected MOSFET_A or MOSFET_A_B on hard.h"
 #endif
 
 #define EnablePreload_MosfetB    (TIM1->CCMR1 |= TIM_CCMR1_OC1PE)

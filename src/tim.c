@@ -215,7 +215,9 @@ void TIM_3_Init (void)
 
     TIM3->CCR1 = 0;        
 }
-#else
+#endif    //USE_ONLY_MOSFET_A
+
+#ifdef USE_MOSFET_A_AND_B
 void TIM_3_Init (void)
 {
     unsigned int temp = 0;
@@ -243,6 +245,10 @@ void TIM_3_Init (void)
     TIM3->CNT = 0;
     TIM3->PSC = 0;
 
+    //esto anula la salida
+    TIM3->CCR1 = DUTY_50_PERCENT_PLUS_ONE;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
+
+
     //TIM3->EGR = TIM_EGR_UG;    //generate event
 
     //Configuracion Pines
@@ -261,17 +267,8 @@ void TIM_3_Init (void)
     // Enable timer ver UDIS
     //TIM3->DIER |= TIM_DIER_UIE;
     TIM3->CR1 |= TIM_CR1_CEN;
-
-    //TIM3->CCR2 = 512;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
-#ifdef USE_ONLY_CM_ONLY_MOSFET_B
-    //esto anula la salida
-    TIM3->CCR1 = DUTY_50_PERCENT + 1;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
-#else
-    //esto filtra un pulsito
-    TIM3->CCR1 = DUTY_50_PERCENT;        //delay = TIM3->CCRx = 512 - TIM1->CCR2
-#endif
 }
-#endif
+#endif    //USE_MOSFET_A_AND_B
 
 
 void TIM3_IRQHandler (void)	//1 ms

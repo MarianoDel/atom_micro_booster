@@ -26,7 +26,7 @@
 #define VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT    VOUT_200V
 
 // #define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
-#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_15V
+#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
 #define VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT    VIN_20V
 
 //---- Configuration for Hardware Versions -------
@@ -40,30 +40,42 @@
 //features are activeted here and annouced in hard.c
 #define FEATURES
 
-// SOFT para VERSIONES V2_0
+// SOFT para VERSIONES 2.0
 #ifdef VER_2_0
-// Tipos de Programas 
-#define USE_FORWARD_MODE
+//-- Types of programs ----------
+// #define USE_FORWARD_MODE
 // #define USE_PUSH_PULL_MODE
-// #define USE_LED_IN_INT
-#define USE_LED_IN_PROT
+#define USE_PUSH_PULL_VOLTAGE_MODE
+
 // #define USE_ONLY_CM_ONLY_MOSFET_A
 // #define USE_ONLY_CM_ONLY_MOSFET_B
 // #define USE_ONLY_CM
 // #define USE_VM_AND_CM
 // #define TEST_FIXED_D
 // #define TEST_FIXED_VOUT
-#define USE_FREQ_75KHZ
-// #define USE_FREQ_48KHZ
 
-// ---------- Tipos de Hardware Utilizado ----------
-#ifdef USE_FORWARD_MODE
-#define USE_ONLY_MOSFET_A
-#endif
+//-- Types of led indications ----------
+// #define USE_LED_IN_INT
+#define USE_LED_IN_PROT
+
+//-- Other configs features ----------
 // #define WITH_OVERCURRENT_SHUTDOWN
 // #define WITH_TIM14_FB
 #define WITH_TIM1_FB
+
+//-- Frequency selection ----------
+#define USE_FREQ_75KHZ
+// #define USE_FREQ_48KHZ
+
+//-- Types of used Hardware ----------
+#ifdef USE_FORWARD_MODE
+#define USE_ONLY_MOSFET_A
 #endif
+#if defined USE_PUSH_PULL_MODE || defined USE_PUSH_PULL_VOLTAGE_MODE
+#define USE_MOSFET_A_AND_B
+#endif
+
+#endif    //ver2.0
 
 
 
@@ -204,6 +216,7 @@ typedef enum
     MAIN_CURRENT_MODE,
     MAIN_OVERCURRENT,
     MAIN_JUMPER_PROTECTED,
+    MAIN_JUMPER_PROTECT_OFF,    
     MAIN_GO_TO_FAILURE,
     MAIN_OVERVOLTAGE,
     MAIN_UNDERVOLTAGE,        
