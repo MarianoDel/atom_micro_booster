@@ -643,16 +643,12 @@ int main(void)
             break;
 
         case MAIN_OVERCURRENT:
-            // if ((!PROT_MOS_A) && (!PROT_MOS_B))
-            // {
-            //     if ((!timer_standby) && (STOP_JUMPER))    //solo destrabo si se coloca el Jumper y se quita
-            //     {                                         //en MAIN_JUMPER_PROTECTED
-            //         LED_OFF;
-            //         ENABLE_TIM3;
-            //         ENABLE_TIM1;
-            //         main_state = MAIN_JUMPER_PROTECTED;
-            //     }
-            // }
+            if ((!timer_standby) && (STOP_JUMPER))
+            {
+                Usart1Send((char *) "leaving overcurrent to jumper prot!\n");
+                main_state = MAIN_JUMPER_PROTECTED;
+                timer_standby = 1000;
+            }
             break;
 
         default:
@@ -719,6 +715,7 @@ int main(void)
             current_excess = 0;
             Usart1Send((char *) "overcurrent\n");
             main_state = MAIN_OVERCURRENT;
+            timer_standby = 2000;
         }
 
         if (!timer_meas)
@@ -836,12 +833,12 @@ void EXTI4_15_IRQHandler(void)
 #ifdef USE_LED_IN_INT    
     LED_ON;
 #endif    
-    DisablePreload_MosfetA;
-    DisablePreload_MosfetB;
-    UpdateTIMSync(0);
-    EnablePreload_MosfetA;
-    EnablePreload_MosfetB;
-    current_excess = 1;
+    // DisablePreload_MosfetA;
+    // DisablePreload_MosfetB;
+    // UpdateTIMSync(0);
+    // EnablePreload_MosfetA;
+    // EnablePreload_MosfetB;
+    // current_excess = 1;
 #ifdef USE_LED_IN_INT        
     LED_OFF;
 #endif    

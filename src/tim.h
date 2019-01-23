@@ -28,7 +28,8 @@
 #define DUTY_NONE		0
 #define DUTY_5_PERCENT		32
 #define DUTY_10_PERCENT		64
-#define DUTY_FOR_DMAX           288
+// #define DUTY_FOR_DMAX           288
+#define DUTY_FOR_DMAX           24
 #define DUTY_50_PERCENT		320
 #define DUTY_50_PERCENT_PLUS_ONE		321
 #define DUTY_100_PERCENT        640
