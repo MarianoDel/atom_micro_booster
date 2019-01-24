@@ -28,8 +28,9 @@
 #define DUTY_NONE		0
 #define DUTY_5_PERCENT		32
 #define DUTY_10_PERCENT		64
-// #define DUTY_FOR_DMAX           288
-#define DUTY_FOR_DMAX           24
+// #define DUTY_FOR_DMAX           288    //d = 0.45 esto da ok con arranque suave vout con carga 100W -> 310V
+#define DUTY_FOR_DMAX           224    //d = 0.35 esto da ok con arranque suave vout con carga 100W -> 310V
+// #define DUTY_FOR_DMAX           108    //esto da 66A con 13V input en los primeros pulsos de corriente
 #define DUTY_50_PERCENT		320
 #define DUTY_50_PERCENT_PLUS_ONE		321
 #define DUTY_100_PERCENT        640

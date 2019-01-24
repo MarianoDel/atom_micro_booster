@@ -281,12 +281,6 @@ void WelcomeCodeFeatures (char * str)
     Wait_ms(30);    
 #endif
 
-#ifdef USE_PUSH_PULL_VOLTAGE_MODE
-    sprintf(str,"[%s] %s\n", __FILE__, str_macro(USE_PUSH_PULL_VOLTAGE_MODE));
-    Usart1Send(str);
-    Wait_ms(30);    
-#endif
-    
 #ifdef WITH_OVERCURRENT_SHUTDOWN
     sprintf(str,"[%s] %s\n", __FILE__, str_macro(WITH_OVERCURRENT_SHUTDOWN));
     Usart1Send(str);

@@ -26,8 +26,8 @@
 #define VOUT_OVERVOLTAGE_THRESHOLD_TO_RECONNECT    VOUT_350V
 
 // #define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
-#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_17V
-#define VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT    VIN_20V
+#define VIN_UNDERVOLTAGE_THRESHOLD_TO_DISCONNECT    VIN_10V
+#define VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT    VIN_12V
 
 //---- Configuration for Hardware Versions -------
 #ifdef VER_2_0
@@ -44,16 +44,13 @@
 #ifdef VER_2_0
 //-- Types of programs ----------
 // #define USE_FORWARD_MODE
-// #define USE_PUSH_PULL_MODE
-#define USE_PUSH_PULL_VOLTAGE_MODE
+#define USE_PUSH_PULL_MODE
 
-// #define USE_ONLY_CM_ONLY_MOSFET_A
-// #define USE_ONLY_CM_ONLY_MOSFET_B
-// #define USE_ONLY_CM
-// #define USE_VM_AND_CM
-// #define TEST_FIXED_D
-// #define TEST_FIXED_VOUT
-
+#ifdef USE_PUSH_PULL_MODE
+// #define IN_PUSH_PULL_SET_FIXED_D        //setea d a DUTY_FOR_DMAX - usareste valor chico!! -
+// #define IN_PUSH_PULL_GROW_TO_FIXED_D    //setea d a DUTY_FOR_DMAX pero incrementando de a poco cada 2ms
+#define IN_PUSH_PULL_VM                 //el d esta definido por la Vout
+#endif
 //-- Types of led indications ----------
 // #define USE_LED_IN_INT
 #define USE_LED_IN_PROT
@@ -71,7 +68,7 @@
 #ifdef USE_FORWARD_MODE
 #define USE_ONLY_MOSFET_A
 #endif
-#if defined USE_PUSH_PULL_MODE || defined USE_PUSH_PULL_VOLTAGE_MODE
+#ifdef USE_PUSH_PULL_MODE
 #define USE_MOSFET_A_AND_B
 #endif
 
@@ -114,6 +111,8 @@
 #define VIN_20V    561    //1.81V
 #define VIN_17V    477
 #define VIN_15V    423
+#define VIN_12V    338
+#define VIN_10V    282
 
 
 // #define VOUT_200V    415
