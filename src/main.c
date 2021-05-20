@@ -1,5 +1,5 @@
 //-----------------------------------------------------
-// #### PROYECTO MICROINVERSOR F030 - Custom Board ####
+// #### MICROINVERTER PROJECT - Custom Board ####
 // ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
@@ -9,7 +9,7 @@
 // #### MAIN.C ########################################
 //-----------------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "stm32f0xx.h"
 
 #include <stdio.h>
@@ -20,8 +20,10 @@
 #include "tim.h"
 #include "uart.h"
 #include "hard.h"
+#include "test_functions.h"
+#include "boost.h"
 
-#include "core_cm0.h"
+// #include "core_cm0.h"
 #include "adc.h"
 #include "dma.h"
 #include "flash_program.h"
@@ -30,26 +32,22 @@
 #include "it.h"
 
 
-
-//--- VARIABLES EXTERNAS ---//
-
-
-// ------- Externals del Puerto serie  -------
+// Externals -------------------------------------------------------------------
+// -- Externals from serial
 volatile unsigned char tx1buff[SIZEOF_DATA];
 volatile unsigned char rx1buff[SIZEOF_DATA];
 volatile unsigned char usart1_have_data = 0;
 
-// ------- Externals del o para el ADC -------
+// -- Externals from ADC 
 volatile unsigned short adc_ch[ADC_CHANNEL_QUANTITY];
 volatile unsigned char seq_ready = 0;
 
-
-// ------- Externals para timers -------
+// -- Externals from timers
 volatile unsigned short timer_led = 0;
 
-
-// ------- Externals para filtros -------
+// -- Externals from filters
 volatile unsigned short take_temp_sample = 0;
+volatile unsigned char hard_overcurrent = 0;
 
 // ------- Definiciones para los filtros -------
 #define SIZEOF_FILTER    8
@@ -63,13 +61,8 @@ unsigned short vin_vector [SIZEOF_FILTER];
 #define UNDERSAMPLING_TICKS_SOFT_START    20
 #endif
 
-// unsigned short vbatt [SIZEOF_FILTER];
-// unsigned short iboost [SIZEOF_FILTER];
 
-
-// parameters_typedef param_struct;
-
-//--- VARIABLES GLOBALES ---//
+// Globals ---------------------------------------------------------------------
 volatile unsigned char current_excess = 0;
 volatile short d = 0;
 short ez1 = 0;
@@ -78,7 +71,7 @@ short ez2 = 0;
 unsigned short last_d = 0;
 #define DELTA_D    2
 
-// ------- de los timers -------
+// -- Globals for timers
 volatile unsigned short wait_ms_var = 0;
 volatile unsigned short timer_standby;
 //volatile unsigned char display_timer;
@@ -95,8 +88,14 @@ volatile unsigned short dmax_permited = 0;
 
 
 
-//--- FUNCIONES DEL MODULO ---//
+// Module Private Functions ----------------------------------------------------
 void TimingDelay_Decrement (void);
+void SysTickError (void);
+
+#ifdef VER_1_2
+// ------- para el LM393 -------
+void EXTI4_15_IRQHandler(void);
+#endif
 
 #ifdef VER_2_0
 // ------- para el LM311 -------
@@ -104,9 +103,7 @@ extern void EXTI4_15_IRQHandler(void);
 #endif
 
 
-//--- Private Definitions ---//
-
-
+// Module Functions ------------------------------------------------------------
 //-------------------------------------------//
 // @brief  Main program.
 // @param  None
@@ -114,6 +111,64 @@ extern void EXTI4_15_IRQHandler(void);
 //------------------------------------------//
 int main(void)
 {
+    //GPIO Configuration.
+    GPIO_Config();
+
+    //Start the SysTick Timer
+    if (SysTick_Config(48000))
+        SysTickError();
+    
+    //--- Hardware Tests Functions ---
+    TF_Led ();
+    TF_Led_Jumper ();
+    TF_Usart1_Tx ();
+    // TF_Led_Blinking();
+    TF_Tim_Channels ();
+    TF_Prot_Mosfet ();
+    TF_Prot_Mosfet_Int ();
+    
+    TF_Usart1_Adc_Dma ();
+    //--- End of Hardware Tests Functions ---    
+    
+    //--- Welcome code ---//
+    Usart1Config();
+    EXTIOff();
+
+#ifdef FEATURES
+    WelcomeCodeFeatures ();
+#endif
+//---------- Version 1_2  --------//
+
+    // Enable the Hard needed
+    // TIM Config
+    TIM_1_Init ();    // mosfet Ctrol_M_B
+    TIM_3_Init ();    // mosfet Ctrol_M_A & synchro ADC
+
+    EnablePreload_MosfetA;
+    EnablePreload_MosfetB;
+
+    UpdateTIMSync (DUTY_NONE);
+
+    // ADC & DMA Config
+    AdcConfig();
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    //Init the boost filters
+    BoostFiltersInit ();
+    
+    while (1)
+    {
+        BoostLoop();
+        UpdateLed();
+    }
+    
+//---------- End of Version 1_2  --------//
+
+    
+//---------- Version 2_0  --------//    
+#if (defined VER_2_0)
     unsigned char i;
     unsigned short ii;
 
@@ -131,77 +186,7 @@ int main(void)
 #ifdef ONLY_COMMS
     unsigned short dmax_vin = 0;
 #endif
-    
-    char s_lcd [120];		
-
-    //GPIO Configuration.
-    GPIO_Config();
-
-    //ACTIVAR SYSTICK TIMER
-    if (SysTick_Config(48000))
-    {
-        while (1)	/* Capture error */
-        {
-            if (LED)
-                LED_OFF;
-            else
-                LED_ON;
-
-            for (i = 0; i < 255; i++)
-            {
-                asm (	"nop \n\t"
-                        "nop \n\t"
-                        "nop \n\t" );
-            }
-        }
-    }
-
-    //--- Leo los parametros de memoria ---//
-
-    // while (1)
-    // {
-    //  if (STOP_JUMPER)
-    //  {
-    //  	LED_OFF;
-    //  }
-    //  else
-    //  {
-    // 	  if (LED)
-    // 	  	LED_OFF;
-    // 	  else
-    // 	  	LED_ON;
-    //
-    // 	  Wait_ms (250);
-    //  }
-    // }
-
-
-//---------- Pruebas de Hardware --------//
-    EXTIOff ();
-    USART1Config();
-    
-    //---- Welcome Code ------------//
-    //---- Defines from hard.h -----//
-#ifdef HARD
-    Usart1Send((char *) HARD);
-    Wait_ms(100);
-#else
-#error	"No Hardware defined in hard.h file"
-#endif
-
-#ifdef SOFT
-    Usart1Send((char *) SOFT);
-    Wait_ms(100);
-#else
-#error	"No Soft Version defined in hard.h file"
-#endif
-
-#ifdef FEATURES
-    WelcomeCodeFeatures(s_lcd);
-#endif
-    
-//---------- Versiones 1_2 y 2_0  --------//    
-#if (defined VER_2_0)
+    char s_lcd [120];		    
     
     TIM_1_Init ();	   //lo utilizo para mosfet Ctrol_M_B y para FB si esta definido en hard.h
     TIM_3_Init ();	   //lo utilizo para mosfet Ctrol_M_A y para synchro ADC
@@ -221,92 +206,6 @@ int main(void)
     DMA1_Channel1->CCR |= DMA_CCR_EN;
 
     ADC1->CR |= ADC_CR_ADSTART;
-
-    //--- Prueba HARD pin FB ----------
-    // //probar con WITH_TIM14_FB y WITH_TIM1_FB
-    // while (1)
-    // {
-    //     for (ii = 0; ii < DUTY_100_PERCENT; ii++)
-    //     {
-    //         UpdateFB(ii);
-    //         Wait_ms(1);
-    //     }
-    //     for (ii = DUTY_100_PERCENT; ii > 0; ii--)
-    //     {
-    //         UpdateFB(ii);
-    //         Wait_ms(1);
-    //     }
-    // }
-    //--- Fin Prueba HARD pin FB ----------
-
-    //--- Prueba HARD pines CTRL_MOSFET ----------
-    //pruebo seniales gate, el defasaje de las mismas y los flancos de I_Sense
-    // UpdateTIMSync (DUTY_FOR_DMAX);
-    // UpdateTIMSync (DUTY_10_PERCENT);    
-    // while (1);
-    //--- Fin Prueba HARD pines CTRL_MOSFET ----------
-
-    //--- Prueba HARD pines ADC ----------
-    // while (1)
-    // {
-    //     if (!timer_standby)
-    //     {
-    //         timer_standby = 2000;
-    //         sprintf (s_lcd, "Vin: %d, Vout: %d, I: %d\n",
-    //                  Vin_Sense,
-    //                  Vout_Sense,
-    //                  I_Sense);
-            
-    //         Usart1Send(s_lcd);
-    //     }
-    // }   
-    //--- Fin Prueba HARD pines ADC ----------
-
-    //--- Prueba tension de salida con max d fijo ----------
-    //este loop trabaja en voltage-mode
-    // while (1)
-    // {
-    //     if (sequence_ready)
-    //     {
-    //         sequence_ready_reset;
-                
-    //         if (undersampling < (UNDERSAMPLING_TICKS - 1))
-    //         {
-    //             undersampling++;
-    //         }
-    //         else
-    //         {
-    //             undersampling = 0;
-    //             d = PID_roof (VOUT_110V, Vout_Sense, d, &ez1, &ez2);
-                    
-    //             if (d < 0)
-    //             {
-    //                 d = 0;
-    //                 ez1 = 0;
-    //                 ez2 = 0;
-    //             }
-
-    //             if (d > DUTY_5_PERCENT)
-    //                 d = DUTY_5_PERCENT;
-
-    //             UpdateTIMSync (d);
-    //         }
-    //     }
-
-    //     if (!timer_standby)
-    //     {
-    //         timer_standby = 2000;
-    //         sprintf (s_lcd, "Vin: %d, Vout: %d, I: %d, d: %d\n",
-    //                  Vin_Sense,
-    //                  Vout_Sense,
-    //                  I_Sense,
-    //                  d);
-            
-    //         Usart1Send(s_lcd);
-    //     }
-
-    // }
-    //--- Fin Prueba tension de salida con max d fijo ----------
                 
 
 #ifdef USE_PUSH_PULL_MODE
@@ -873,7 +772,7 @@ void EXTI4_15_IRQHandler(void)
 #ifdef USE_LED_IN_INT    
     LED_ON;
 #endif
-
+    hard_overcurrent = 1;
     
 #ifdef USE_LED_IN_INT        
     LED_OFF;
@@ -882,4 +781,25 @@ void EXTI4_15_IRQHandler(void)
 #endif
 }
 
-//------ EOF -------//
+
+void SysTickError (void)
+{
+    //Capture systick error...
+    while (1)
+    {
+        if (LED)
+            LED_OFF;
+        else
+            LED_ON;
+
+        for (unsigned char i = 0; i < 255; i++)
+        {
+            asm ("nop \n\t"
+                 "nop \n\t"
+                 "nop \n\t" );
+        }
+    }
+}
+
+//--- end of file ---//
+

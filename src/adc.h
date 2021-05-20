@@ -26,7 +26,7 @@
 #endif
 //----------- End of ADC Configurations --------------//
 
-#ifdef VER_2_0
+#if (defined VER_2_0) || (defined VER_1_2)
 #define Vin_Sense		adc_ch[0]
 #define Vout_Sense	        adc_ch[1]
 #define I_Sense    	       	adc_ch[2]

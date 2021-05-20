@@ -30,6 +30,8 @@ void DMAConfig(void);
 void DMAEnableInterrupt (void);
 void DMADisableInterrupt (void);
 void DMA1_Channel1_IRQHandler (void);
+unsigned char DMASequenceReady (void);
+void DMASequenceReadyReset (void);
 
 
 

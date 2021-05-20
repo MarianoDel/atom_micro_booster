@@ -1,33 +1,61 @@
 //---------------------------------------------
-// ##
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
 // ## @CPU:    STM32F030
 // ##
-// #### TIM.C ################################
+// #### TIM.C #################################
 //---------------------------------------------
 
-/* Includes ------------------------------------------------------------------*/
+// Includes --------------------------------------------------------------------
 #include "tim.h"
 #include "stm32f0xx.h"
 #include "uart.h"
 #include "hard.h"
 
 
-//--- VARIABLES EXTERNAS ---//
+// Module Private Types Constants and Macros -----------------------------------
+#define RCC_TIM1_CLK    (RCC->APB2ENR & 0x00000800)
+#define RCC_TIM1_CLK_ON    (RCC->APB2ENR |= 0x00000800)
+#define RCC_TIM1_CLK_OFF    (RCC->APB2ENR &= ~0x00000800)
+
+#define RCC_TIM3_CLK    (RCC->APB1ENR & 0x00000002)
+#define RCC_TIM3_CLK_ON    (RCC->APB1ENR |= 0x00000002)
+#define RCC_TIM3_CLK_OFF    (RCC->APB1ENR &= ~0x00000002)
+
+#define RCC_TIM6_CLK    (RCC->APB1ENR & 0x00000010)
+#define RCC_TIM6_CLK_ON    (RCC->APB1ENR |= 0x00000010)
+#define RCC_TIM6_CLK_OFF    (RCC->APB1ENR &= ~0x00000010)
+
+#define RCC_TIM14_CLK    (RCC->APB1ENR & 0x00000100)
+#define RCC_TIM14_CLK_ON    (RCC->APB1ENR |= 0x00000100)
+#define RCC_TIM14_CLK_OFF    (RCC->APB1ENR &= ~0x00000100)
+
+#define RCC_TIM15_CLK    (RCC->APB2ENR & 0x00010000)
+#define RCC_TIM15_CLK_ON    (RCC->APB2ENR |= 0x00010000)
+#define RCC_TIM15_CLK_OFF    (RCC->APB2ENR &= ~0x00010000)
+
+#define RCC_TIM16_CLK    (RCC->APB2ENR & 0x00020000)
+#define RCC_TIM16_CLK_ON    (RCC->APB2ENR |= 0x00020000)
+#define RCC_TIM16_CLK_OFF    (RCC->APB2ENR &= ~0x00020000)
+
+#define RCC_TIM17_CLK    (RCC->APB2ENR & 0x00040000)
+#define RCC_TIM17_CLK_ON    (RCC->APB2ENR |= 0x00040000)
+#define RCC_TIM17_CLK_OFF    (RCC->APB2ENR &= ~0x00040000)
+
+
+// Externals -------------------------------------------------------------------
 extern volatile unsigned char timer_1seg;
 extern volatile unsigned short timer_led_comm;
 extern volatile unsigned short wait_ms_var;
 
 
-//--- VARIABLES GLOBALES ---//
-
+// Globals ---------------------------------------------------------------------
 volatile unsigned short timer_1000 = 0;
 
 
 
-//--- FUNCIONES DEL MODULO ---//
+// Module Functions ------------------------------------------------------------
 // inline void UpdateTIMSync (unsigned short a)
 // {
 //     //primero cargo TIM1
@@ -410,6 +438,18 @@ void TIM_17_Init (void)
 
     NVIC_EnableIRQ(TIM17_IRQn);
     NVIC_SetPriority(TIM17_IRQn, 8);
+}
+
+
+void TIM_DisableMosfets (void)
+{
+    DisablePreload_MosfetA;
+    DisablePreload_MosfetB;
+
+    UpdateTIMSync (DUTY_NONE);
+
+    EnablePreload_MosfetA;
+    EnablePreload_MosfetB;
 }
 
 //--- end of file ---//

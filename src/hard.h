@@ -3,15 +3,18 @@
 // ## @Author: Med
 // ## @Editor: Emacs - ggtags
 // ## @TAGS:   Global
-// ## @CPU:    STM32F103
+// ## @CPU:    STM32F030
 // ##
 // #### HARD.H ################################
 //---------------------------------------------
 #ifndef _HARD_H_
 #define _HARD_H_
 
+#include "stm32f0xx.h"
+
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
+// #define VER_1_2    //placa combinada con inverter voltage cntrl + overcurrent
 #define VER_2_0    //usa control por tension mas proteccion de corriente pico
 
 
@@ -30,6 +33,10 @@
 #define VIN_UNDERVOLTAGE_THRESHOLD_TO_RECONNECT    VIN_12V
 
 //---- Configuration for Hardware Versions -------
+#ifdef VER_1_2
+#define HARDWARE_VERSION_1_2
+#define SOFTWARE_VERSION_1_2
+#endif
 #ifdef VER_2_0
 #define HARDWARE_VERSION_2_0
 #define SOFTWARE_VERSION_2_0
@@ -40,6 +47,30 @@
 //features are activeted here and annouced in hard.c
 #define FEATURES
 
+// SOFT para VERSIONES 1.2
+#ifdef VER_1_2
+//-- Types of programs ----------
+#define USE_PUSH_PULL_MODE
+
+#ifdef USE_PUSH_PULL_MODE
+// #define IN_PUSH_PULL_SET_FIXED_D        //setea d a DUTY_FOR_DMAX - usareste valor chico!! -
+#define IN_PUSH_PULL_GROW_TO_FIXED_D    //setea d a DUTY_FOR_DMAX pero incrementando de a poco cada 2ms
+// #define IN_PUSH_PULL_VM                 //el d esta definido por la Vout
+#endif
+//-- Types of led indications ----------
+// #define USE_LED_IN_INT
+#define USE_LED_IN_PROT
+
+//-- Other configs features ----------
+
+//-- Frequency selection ----------
+// #define USE_FREQ_75KHZ
+#define USE_FREQ_48KHZ
+
+//-- Types of used Hardware ----------
+#define USE_MOSFET_A_AND_B
+#endif    //ver1.2
+
 // SOFT para VERSIONES 2.0
 #ifdef VER_2_0
 //-- Types of programs ----------
@@ -48,8 +79,8 @@
 
 #ifdef USE_PUSH_PULL_MODE
 // #define IN_PUSH_PULL_SET_FIXED_D        //setea d a DUTY_FOR_DMAX - usareste valor chico!! -
-// #define IN_PUSH_PULL_GROW_TO_FIXED_D    //setea d a DUTY_FOR_DMAX pero incrementando de a poco cada 2ms
-#define IN_PUSH_PULL_VM                 //el d esta definido por la Vout
+#define IN_PUSH_PULL_GROW_TO_FIXED_D    //setea d a DUTY_FOR_DMAX pero incrementando de a poco cada 2ms
+// #define IN_PUSH_PULL_VM                 //el d esta definido por la Vout
 #endif
 //-- Types of led indications ----------
 // #define USE_LED_IN_INT
@@ -88,11 +119,19 @@
 #define str_macro(s) #s
 
 //--- Hardware Welcome Code ------------------//
+#ifdef HARDWARE_VERSION_1_2
+#define HARD "Hardware V: 1.2 Assembled with inverter\n"
+#endif
+
 #ifdef HARDWARE_VERSION_2_0
 #define HARD "Hardware V: 2.0\n"
 #endif
 
 //--- Software Welcome Code ------------------//
+#ifdef SOFTWARE_VERSION_1_2
+#define SOFT "Software V: 1.2\n"
+#endif
+
 #ifdef SOFTWARE_VERSION_2_0
 #define SOFT "Software V: 2.0\n"
 #endif
@@ -154,6 +193,49 @@
 #endif
 
 //------- PIN CONFIG ----------------------
+#ifdef VER_1_2
+//GPIOA pin0	Vin_Sense
+//GPIOA pin1	Vout_Sense
+//GPIOA pin2	I_Sense
+
+//GPIOA pin3	NC
+
+//GPIOA pin4	
+#define PROT_MOS	((GPIOA->IDR & 0x0010) == 0)
+
+//GPIOA pin5    NC
+
+//GPIOA pin6	para TIM3_CH1 (MOSFET_A)
+
+//GPIOA pin7	NC
+//GPIOB pin0    NC
+//GPIOB pin1    NC
+
+//GPIOA pin8	para TIM1_CH1 (MOSFET_B)
+
+//GPIOA pin9
+//GPIOA pin10	usart1 tx rx
+
+//GPIOA pin11	NC
+//GPIOA pin12	NC
+//GPIOA pin13	NC
+//GPIOA pin14	NC
+
+//GPIOA pin15
+#define LED    ((GPIOA->ODR & 0x8000) != 0)
+#define LED_ON    (GPIOA->BSRR = 0x00008000)
+#define LED_OFF    (GPIOA->BSRR = 0x80000000)
+
+//GPIOB pin3	NC
+//GPIOB pin4	NC
+//GPIOB pin5	NC
+
+//GPIOB pin6
+#define STOP_JUMPER ((GPIOB->IDR & 0x0040) == 0)
+
+//GPIOB pin7	NC
+#endif	//VER_1_2
+
 #ifdef VER_2_0
 //GPIOA pin0	Vin_Sense
 //GPIOA pin1	Vout_Sense
@@ -272,6 +354,9 @@ unsigned short UpdateDmaxLout (unsigned short);
 unsigned short VoutTicksToVoltage (unsigned short);
 unsigned short VinTicksToVoltage (unsigned short);
 unsigned short Hard_GetDmaxLout (unsigned short, unsigned short);
-void WelcomeCodeFeatures (char *);
+void WelcomeCodeFeatures (void);
+unsigned char HARD_StopJumper (void);
+unsigned char HARD_MosfetProtection(void);
+
     
 #endif /* _HARD_H_ */

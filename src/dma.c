@@ -78,4 +78,18 @@ void DMA1_Channel1_IRQHandler (void)
 }
 #endif
 
+
+unsigned char DMASequenceReady (void)
+{
+    if (sequence_ready)
+        return 1;
+    else
+        return 0;
+}
+
+
+void DMASequenceReadyReset (void)
+{
+    sequence_ready_reset;
+}
 //---- end of file ----//

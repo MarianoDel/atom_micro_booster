@@ -242,8 +242,23 @@ unsigned short Hard_GetDmaxLout (unsigned short vin, unsigned short vout)
     return UpdateDmaxLout((unsigned short)delta_vout);
 }
 
-void WelcomeCodeFeatures (char * str)
+void WelcomeCodeFeatures (void)
 {
+    char str [128] = { 0 };
+#ifdef HARD
+    Usart1Send((char *) HARD);
+    Wait_ms(100);
+#else
+#error	"No Hardware defined in hard.h file"
+#endif
+
+#ifdef SOFT
+    Usart1Send((char *) SOFT);
+    Wait_ms(100);
+#else
+#error	"No Soft Version defined in hard.h file"
+#endif
+    
 #ifdef TEST_INT_PRGRM
     Usart1Send("Programa de Testeo INT\n");
     Wait_ms(30);
@@ -321,6 +336,26 @@ void WelcomeCodeFeatures (char * str)
     Usart1Send(str);
     Wait_ms(30);    
 #endif    
+}
+
+
+unsigned char HARD_StopJumper (void)
+{
+    if (STOP_JUMPER)
+        return 1;
+    else
+        return 0;
+    
+}
+
+
+unsigned char HARD_MosfetProtection(void)
+{
+    if (PROT_MOS)
+        return 1;
+    else
+        return 0;
+    
 }
 
 //---- end of file ----//
