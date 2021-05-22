@@ -32,7 +32,7 @@
 // Externals -------------------------------------------------------------------
 extern volatile unsigned short boost_timeout;
 extern int boost_state;
-extern unsigned short BoostMaxDuty (unsigned short vin);
+extern unsigned short BoostMaxDutyVinput (unsigned short vin);
 
 
 // Globals ---------------------------------------------------------------------
@@ -47,12 +47,13 @@ unsigned short adc_ch[3] = { 0 };
 // Module Functions to Test ----------------------------------------------------
 void TEST_Boost_Timeout (void);
 void TEST_Boost_Loop (void);
-void TEST_MaxTime (void);
+void TEST_MaxTimeVinput (void);
 
 
 // Module Auxiliary Functions for Tests ----------------------------------------
-float MaxTime (float vin_volts);
-int MaxDuty (float time_secs, int freq);
+float MaxTimeVinput (float vin_volts);
+int MaxDutyVinput (float time_secs, int freq);
+
 void EXTIOn (void);
 void EXTIOff (void);
 unsigned char DMASequenceReady (void);
@@ -69,7 +70,7 @@ int main (int argc, char *argv[])
     printf("Simple boost module tests\n");
     TEST_Boost_Timeout();
     TEST_Boost_Loop();
-    TEST_MaxTime ();
+    TEST_MaxTimeVinput ();
 
     return 0;
 }
@@ -209,16 +210,16 @@ void TEST_Boost_Timeout (void)
 }
 
 
-void TEST_MaxTime (void)
+void TEST_MaxTimeVinput (void)
 {
     float vin_input = 20.0;
-    float time_s = MaxTime(vin_input);
+    float time_s = MaxTimeVinput(vin_input);
     printf("max time allowed for vin_input: %.02fV time: %fus\n",
            vin_input,
            time_s * 1e6);
 
     int freq_selected = 48000;
-    int duty_max = MaxDuty (time_s, freq_selected); 
+    int duty_max = MaxDutyVinput (time_s, freq_selected); 
     printf("max duty for freq: %dHz duty: %d\n",
            freq_selected,
            duty_max);
@@ -231,12 +232,46 @@ void TEST_MaxTime (void)
            vin_scaled,
            vin_points);
 
-    unsigned short dmax_points = BoostMaxDuty (vin_points);
+    unsigned short dmax_points = BoostMaxDutyVinput (vin_points);
     printf("embedded dmax result: %d\n", dmax_points);
+
+    int errors = 0;
+    for (int i = 20; i < 41; i++)
+    {
+        // local calcs
+        vin_input = i;
+        time_s = MaxTimeVinput(vin_input);
+        duty_max = MaxDutyVinput (time_s, freq_selected);
+
+        // embedded calcs
+        vin_scaled = vin_input * 0.0909;
+        adc = vin_scaled * 4095 / 3.3;
+        vin_points = (unsigned short) adc;
+        dmax_points = BoostMaxDutyVinput (vin_points);
+
+        if (duty_max != dmax_points)
+        {
+            i = 41;
+            errors = 1;
+        }
+    }
+
+    printf("Test loop embedded dmax for vinput: ");
+    if (!errors)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("vin_input: %.2f duty_max: %d embedded getted: %d\n",
+               vin_input,
+               duty_max,
+               dmax_points);
+    }
+
 }
 
 
-float MaxTime (float vin_volts)
+float MaxTimeVinput (float vin_volts)
 {
     float bmax = 0.25;
     float ae = 153e-6;
@@ -248,7 +283,7 @@ float MaxTime (float vin_volts)
 }
 
 
-int MaxDuty (float time_secs, int freq)
+int MaxDutyVinput (float time_secs, int freq)
 {
     float period = freq;
     period = 1 / period;

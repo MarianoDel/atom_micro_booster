@@ -57,7 +57,7 @@ ma8_u16_data_obj_t vin_sense_filter;
 
 
 // Module Private Functions ----------------------------------------------------
-unsigned short BoostMaxDuty (unsigned short vin);
+unsigned short BoostMaxDutyVinput (unsigned short vin);
 
 
 // Module Functions ------------------------------------------------------------
@@ -213,7 +213,7 @@ void BoostTimeouts (void)
 //
 // num scaled = (0.042714/3.3) * freq * max_duty = 621294.88
 #define K_TRAFO 621295
-unsigned short BoostMaxDuty (unsigned short vin)
+unsigned short BoostMaxDutyVinput (unsigned short vin)
 {
     return K_TRAFO / vin;
 }
