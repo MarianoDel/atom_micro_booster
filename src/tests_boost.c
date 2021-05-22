@@ -48,11 +48,14 @@ unsigned short adc_ch[3] = { 0 };
 void TEST_Boost_Timeout (void);
 void TEST_Boost_Loop (void);
 void TEST_MaxTimeVinput (void);
+void TEST_MaxTimeLout (void);
 
 
 // Module Auxiliary Functions for Tests ----------------------------------------
 float MaxTimeVinput (float vin_volts);
-int MaxDutyVinput (float time_secs, int freq);
+float MaxTimeLout (float vin_volts, float vout_volts);
+int MaxDuty (float time_secs, int freq);
+
 
 void EXTIOn (void);
 void EXTIOff (void);
@@ -71,6 +74,7 @@ int main (int argc, char *argv[])
     TEST_Boost_Timeout();
     TEST_Boost_Loop();
     TEST_MaxTimeVinput ();
+    TEST_MaxTimeLout ();    
 
     return 0;
 }
@@ -219,7 +223,7 @@ void TEST_MaxTimeVinput (void)
            time_s * 1e6);
 
     int freq_selected = 48000;
-    int duty_max = MaxDutyVinput (time_s, freq_selected); 
+    int duty_max = MaxDuty (time_s, freq_selected); 
     printf("max duty for freq: %dHz duty: %d\n",
            freq_selected,
            duty_max);
@@ -241,7 +245,7 @@ void TEST_MaxTimeVinput (void)
         // local calcs
         vin_input = i;
         time_s = MaxTimeVinput(vin_input);
-        duty_max = MaxDutyVinput (time_s, freq_selected);
+        duty_max = MaxDuty (time_s, freq_selected);
 
         // embedded calcs
         vin_scaled = vin_input * 0.0909;
@@ -271,6 +275,81 @@ void TEST_MaxTimeVinput (void)
 }
 
 
+void TEST_MaxTimeLout (void)
+{
+    float vin_input = 20.0;
+    float vout_input = 350.0;
+    float time_s = MaxTimeLout(vin_input, vout_input);
+    printf("max time allowed for vin: %.02fV vout: %.02fV time: %fus\n",
+           vin_input,
+           vout_input,
+           time_s * 1e6);
+
+    int freq_selected = 48000;
+    int duty_max = MaxDuty (time_s, freq_selected); 
+    printf("max duty for freq: %dHz duty: %d\n",
+           freq_selected,
+           duty_max);
+
+    float vin_scaled = vin_input * 0.0909;
+    float adc_vin = vin_scaled * 4095 / 3.3;
+    unsigned short vin_points = (unsigned short) adc_vin;
+    printf("embedded vin: %.2fV vin_scaled: %.2fV vin_points: %d\n",
+           vin_input,
+           vin_scaled,
+           vin_points);
+
+    float vout_scaled = vout_input * 0.0069;
+    float adc_vout = vout_scaled * 4095 / 3.3;
+    unsigned short vout_points = (unsigned short) adc_vout;
+    printf("embedded vout: %.2fV vout_scaled: %.2fV vout_points: %d\n",
+           vout_input,
+           vout_scaled,
+           vout_points);
+    
+    unsigned short dmax_points = BoostMaxDutyLout (vin_points, vout_points);
+    printf("embedded dmax result: %d\n", dmax_points);
+
+    int errors = 0;
+    int distance = 0;
+    for (int i = 0; i < 440; i+=10)
+    {
+        // local calcs
+        vout_input = i;
+        time_s = MaxTimeLout(vin_input, vout_input);
+        duty_max = MaxDuty (time_s, freq_selected);
+
+        // embedded calcs
+        vout_scaled = vout_input * 0.0069;
+        adc_vout = vout_scaled * 4095 / 3.3;
+        vout_points = (unsigned short) adc_vout;
+        dmax_points = BoostMaxDutyLout (vin_points, vout_points);
+
+        // 5 point distance
+        distance = duty_max - dmax_points;
+        if ((distance > 2) || (distance < -2))
+        {
+            i = 440;
+            errors = 1;
+        }
+    }
+
+    printf("Test loop embedded dmax for Lout: ");
+    if (!errors)
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("vin_input: %.2f vout_input: %.2f duty_max: %d embedded getted: %d\n",
+               vin_input,
+               vout_input,
+               duty_max,
+               dmax_points);
+    }
+
+}
+
+
 float MaxTimeVinput (float vin_volts)
 {
     float bmax = 0.25;
@@ -283,11 +362,33 @@ float MaxTimeVinput (float vin_volts)
 }
 
 
-int MaxDutyVinput (float time_secs, int freq)
+float MaxTimeLout (float vin_volts, float vout_volts)
 {
+    float imax = 1.345;
+    float lm = 1.8e-3;
+    int nrel = 11 * 2;    //nsec = 33, npri = 3, double transformer
+
+    float vin_reflected = vin_volts * nrel;
+
+    float max_time = 0.0;
+    if (vin_reflected < vout_volts)
+        max_time = 1. / 48000;
+    else
+        max_time = imax * lm / (vin_reflected - vout_volts);
+
+    return max_time;
+}
+
+
+int MaxDuty (float time_secs, int freq)
+{
+    int max_duty_allowed = 450;
     float period = freq;
     period = 1 / period;
     float duty = time_secs * 1000 / period;
+
+    if (duty > max_duty_allowed)
+        duty = max_duty_allowed;
     
     return (int) duty;
 }

@@ -58,6 +58,7 @@ ma8_u16_data_obj_t vin_sense_filter;
 
 // Module Private Functions ----------------------------------------------------
 unsigned short BoostMaxDutyVinput (unsigned short vin);
+unsigned short BoostMaxDutyLout (unsigned short vin, unsigned short vout);
 
 
 // Module Functions ------------------------------------------------------------
@@ -77,11 +78,17 @@ void BoostLoop (void)
             ChangeLed(BOOST_LED_SOFT_OVERCURRENT);
         }
 
-
+        // check for dmax allowed
         unsigned short vin_filtered = MA8_U16Circular(&vin_sense_filter, Vin_Sense);
-        // unsigned short dmax_vin = 
+        unsigned short dmax_vin = BoostMaxDutyVinput (vin_filtered);
+        unsigned short dmax_lout = BoostMaxDutyLout (vin_filtered, Vout_Sense);
+        unsigned short dmax = 0;
 
-        
+        if (dmax_vin <= dmax_lout)
+            dmax = dmax_vin;
+        else
+            dmax = dmax_lout;
+
         
         switch (boost_state)
         {
@@ -215,8 +222,63 @@ void BoostTimeouts (void)
 #define K_TRAFO 621295
 unsigned short BoostMaxDutyVinput (unsigned short vin)
 {
+    if (vin == 0)
+        return 0;
+    
     return K_TRAFO / vin;
 }
 
 
+unsigned short UpdateDmaxLout (unsigned short delta_voltage)
+{
+    unsigned int num, den;
+
+    if (delta_voltage > 0)
+    {
+        // num = I_FOR_CALC * LOUT_UHY * 1000;    //cambio para no tener decimales en el preprocesador
+        num =  (ILOUT * 1000) * LOUT_UHY;
+        // num = I_FOR_CALC_MILLIS * LOUT_UHY;    
+        den = delta_voltage * TICK_PWM_NS;
+        num = num / den;
+
+        if (num > DMAX_HARDWARE)
+            num = DMAX_HARDWARE;
+    }
+    else
+        num = DMAX_HARDWARE;
+
+    return (unsigned short) num;
+}
+
+
+// vin volts divider = 2255 @ 20V = 0.00887
+// vin reflected divider = 22 * 0.00887 = 0.195
+// vout volts divider = 3000 pts @ 350V = 0.1166
+//
+// tmax = Imax . Lm / delta_v
+// Imax = 1.345A
+// Lm = 1.8mHy
+// max_duty = 1000
+// duty = tmax * freq * max_duty
+// num scaled = Imax * Lm * freq * max_duty = 116208
+unsigned short BoostMaxDutyLout (unsigned short vin, unsigned short vout)
+{
+    unsigned int vin_reflected = vin * 195;
+    vin_reflected = vin_reflected / 1000;
+
+    unsigned int vout_scaled = vout * 117;
+    vout_scaled = vout_scaled / 1000;
+
+    if (vin_reflected <= vout_scaled)    //equals protect div by 0!
+        return DMAX_HARDWARE;
+
+    unsigned short delta_v = vin_reflected - vout_scaled;
+    unsigned int duty = 116208 / delta_v;
+
+    if (duty > DMAX_HARDWARE)
+        return DMAX_HARDWARE;
+    else
+        return (unsigned short) duty;
+    
+}
 //--- end of file ---//
