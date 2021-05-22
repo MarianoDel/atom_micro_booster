@@ -237,9 +237,10 @@ tests_dsp:
 tests_boost:
 	# first module objects to test
 	gcc -c src/boost.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc src/tests_boost.c boost.o tests_ok.o -I $(INCDIR) $(DDEFS)
+	gcc src/tests_boost.c boost.o dsp.o tests_ok.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
 # *** EOF ***

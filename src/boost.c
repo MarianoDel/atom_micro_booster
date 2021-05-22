@@ -57,6 +57,7 @@ ma8_u16_data_obj_t vin_sense_filter;
 
 
 // Module Private Functions ----------------------------------------------------
+unsigned short BoostMaxDuty (unsigned short vin);
 
 
 // Module Functions ------------------------------------------------------------
@@ -190,6 +191,31 @@ void BoostTimeouts (void)
     if (boost_timeout)
         boost_timeout--;
     
+}
+
+
+// tmax = ae * bmax * np / vin
+// ae = 153e-6
+// bmax = 0.25
+// np = 3
+//
+// max_duty = 1000
+// duty = tmax * freq * max_duty
+//
+// adc_vref = 3.3
+// adc_fullscale = 4095
+// volts divider = 0.0909
+// vin_adc = vin * volts_divider * adc_fullscale / adc_vref
+// vin = vin_adc * adc_vref / (volts_divider * adc_fullscale)
+//
+// numerator modified (ae * bmax * np) * (volts_divider * adc_fullscale) = 0.042714
+// denominator modified vin_adc * adc_ref
+//
+// num scaled = (0.042714/3.3) * freq * max_duty = 621294.88
+#define K_TRAFO 621295
+unsigned short BoostMaxDuty (unsigned short vin)
+{
+    return K_TRAFO / vin;
 }
 
 
