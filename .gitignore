@@ -10,3 +10,5 @@ GRTAGS
 GTAGS
 *.zip
 *.out
+*.pyc
+*.txt
