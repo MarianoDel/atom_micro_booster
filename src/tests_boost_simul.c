@@ -105,8 +105,8 @@ void TIM_DisableMosfets (void);
 int main (int argc, char *argv[])
 {
     printf("Start of Analog simulations...\n");
-    // Boost_Step_Response();
-    Boost_Step_Response_Duty();
+    Boost_Step_Response();
+    // Boost_Step_Response_Duty();
     // TestSignalCloseLoop ();
     // TestSignalPreDistorted();
     // TestGenSignal();
@@ -1332,7 +1332,7 @@ void Boost_Step_Response (void)
     Vector_Float_To_File(file, "vinput_applied", vinput_applied, VECTOR_LENGTH);
     Vector_Float_To_File(file, "voutput", voutput, VECTOR_LENGTH);
 
-    printf("\nRun by hand python3 simul_filter.py\n");
+    printf("\nRun by hand python3 simul_booster.py\n");
 
 }
 
