@@ -78,3 +78,7 @@
 
 ** TODO Agrandar bobinado secundario para 350Vcc
 
+* Simulaciones - 23.05.2021
+** Agrego simulaciones python
+   - booster_analog_digi.py
+

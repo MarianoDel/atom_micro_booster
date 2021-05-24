@@ -187,6 +187,12 @@ void TF_Usart1_Adc_Dma (void)
                 Usart1Send(s_to_send);
                 cntr = 0;
             }
+
+            // for sampling time determination
+            if (LED)
+                LED_OFF;
+            else
+                LED_ON;
         }            
     }
 }

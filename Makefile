@@ -243,4 +243,14 @@ tests_boost:
 	gcc src/tests_boost.c boost.o dsp.o tests_ok.o -I $(INCDIR) $(DDEFS)
 	./a.out
 
+tests_boost_simul:
+	# tests on modules with no dependencies with hardware
+	gcc -c src/dsp.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/boost.c -I. $(INCDIR) $(DDEFS)
+	gcc -c src/tests_vector_utils.c -I. $(INCDIR)
+	gcc -c src/tests_recursive_utils.c -I. $(INCDIR)
+	gcc src/tests_boost_simul.c dsp.o boost.o tests_vector_utils.o tests_recursive_utils.o -lm
+	./a.out
+
+
 # *** EOF ***
