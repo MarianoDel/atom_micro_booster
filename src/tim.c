@@ -452,4 +452,12 @@ void TIM_DisableMosfets (void)
     EnablePreload_MosfetB;
 }
 
+
+void TIM_UpdateMosfetsSync (unsigned short new_pwm)
+{
+    TIM1->CCR1 = new_pwm;
+    TIM3->CCR1 = new_pwm;
+}
+
+
 //--- end of file ---//

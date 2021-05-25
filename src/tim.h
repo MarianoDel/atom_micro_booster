@@ -106,7 +106,7 @@ void TIM16Disable (void);
 void Wait_ms (unsigned short wait);
 
 void TIM_DisableMosfets (void);
-    
+void TIM_UpdateMosfetsSync (unsigned short new_pwm);    
 
 #endif    /* _TIM_H_ */
 

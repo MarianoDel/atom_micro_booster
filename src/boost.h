@@ -14,7 +14,10 @@
 
 
 // Exported Types Constants and Macros -----------------------------------------
+#define OUTPUT_SETPOINT    3000
+#define VOUT_SENSE_SOFT_START_THRESHOLD    2800
 
+#define I_SENSE_MAX_THRESHOLD    2000
 
 
 // Exported Functions ----------------------------------------------------------

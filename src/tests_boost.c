@@ -440,10 +440,18 @@ unsigned char HARD_MosfetProtection(void)
 }
 
 
+char led_strings [7][30] = { {"LED_NO_BLINKING"},
+                             {"BOOST_LED_INIT"},
+                             {"BOOST_LED_SOFT_START"},
+                             {"BOOST_LED_FULL_LOAD"},
+                             {"BOOST_LED_JUMPER_PROT"},
+                             {"BOOST_LED_HARD_OVERCURRENT"},
+                             {"BOOST_LED_SOFT_OVERCURRENT"} };
+
 void ChangeLed (unsigned char led)
 {
     hard_led_state = led;
-    printf("LED changed to: %d\n", led);
+    printf("LED changed to: %d %s\n", led, led_strings[led]);
 }
 
 

@@ -40,7 +40,6 @@ typedef enum {
 #define BOOST_LED_HARD_OVERCURRENT    5
 #define BOOST_LED_SOFT_OVERCURRENT    6
 
-#define I_SENSE_MAX_THRESHOLD    2000
 
 // Externals -------------------------------------------------------------------
 extern volatile unsigned short timer_standby;
@@ -54,6 +53,10 @@ extern volatile unsigned short adc_ch[];
 volatile unsigned short boost_timeout = 0;
 boost_state_e boost_state = boost_init;
 ma8_u16_data_obj_t vin_sense_filter;
+short duty = 0;
+unsigned char soft_start_cntr = 0;
+
+pid_data_obj_t voltage_pid;
 
 
 // Module Private Functions ----------------------------------------------------
@@ -82,6 +85,7 @@ void BoostLoop (void)
         unsigned short vin_filtered = MA8_U16Circular(&vin_sense_filter, Vin_Sense);
         unsigned short dmax_vin = BoostMaxDutyVinput (vin_filtered);
         unsigned short dmax_lout = BoostMaxDutyLout (vin_filtered, Vout_Sense);
+        // unsigned short dmax_lout = DUTY_45_PERCENT;        
         unsigned short dmax = 0;
 
         if (dmax_vin <= dmax_lout)
@@ -95,6 +99,10 @@ void BoostLoop (void)
         case boost_init:
             ChangeLed(BOOST_LED_INIT);
             MA8_U16Circular_Reset(&vin_sense_filter);
+            duty = 0;
+            soft_start_cntr = 0;
+            PID_Flush_Errors(&voltage_pid);
+            // PID_Small_Ki_Flush_Errors(&voltage_pid);            
 
             boost_state++;
             break;
@@ -109,10 +117,47 @@ void BoostLoop (void)
             
             break;
             
-        case boost_soft_start:            
+        case boost_soft_start:
+            if (Vout_Sense < VOUT_SENSE_SOFT_START_THRESHOLD)
+            {
+                if (soft_start_cntr)
+                    soft_start_cntr--;
+                else
+                {
+                    soft_start_cntr = 7;    //eight cycles before the change 8/24000 = 333us
+                    if (duty < dmax)
+                    {
+                        duty++;
+                        TIM_UpdateMosfetsSync(duty);
+                    }
+                }
+            }
+            else
+            {
+                voltage_pid.kp = 1;
+                voltage_pid.ki = 5;
+                voltage_pid.kd = 300;
+                voltage_pid.last_d = duty;
+                
+                boost_state++;
+                ChangeLed(BOOST_LED_FULL_LOAD);
+            }
             break;
 
         case boost_full_load:
+            voltage_pid.setpoint = OUTPUT_SETPOINT;
+            voltage_pid.sample = Vout_Sense;
+            // duty = PI(&voltage_pid);
+            duty = PID(&voltage_pid);            
+            // duty = PID_Small_Ki(&voltage_pid);
+
+            if (duty < 0)
+                duty = 0;
+
+            if (duty > dmax)
+                duty = dmax;
+
+            TIM_UpdateMosfetsSync(duty);
             break;
 
         case boost_jumper_protected:
