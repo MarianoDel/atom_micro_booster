@@ -28,7 +28,8 @@ typedef enum {
     boost_full_load,
     boost_jumper_protected,
     boost_hard_overcurrent,
-    boost_soft_overcurrent    
+    boost_soft_overcurrent,
+    boost_soft_overvoltage
     
 } boost_state_e;
 
@@ -39,6 +40,7 @@ typedef enum {
 #define BOOST_LED_JUMPER_PROT    4
 #define BOOST_LED_HARD_OVERCURRENT    5
 #define BOOST_LED_SOFT_OVERCURRENT    6
+#define BOOST_LED_SOFT_OVERVOLTAGE    7
 
 
 // Externals -------------------------------------------------------------------
@@ -81,6 +83,16 @@ void BoostLoop (void)
             ChangeLed(BOOST_LED_SOFT_OVERCURRENT);
         }
 
+        // check for soft overvoltage
+        if ((Vout_Sense > VOUT_SENSE_MAX_THRESHOLD) &&
+            (boost_state != boost_soft_overvoltage))
+        {
+            TIM_DisableMosfets();
+            boost_state = boost_soft_overvoltage;
+            boost_timeout = 10000;
+            ChangeLed(BOOST_LED_SOFT_OVERVOLTAGE);
+        }
+        
         // check for dmax allowed
         unsigned short vin_filtered = MA8_U16Circular(&vin_sense_filter, Vin_Sense);
         unsigned short dmax_vin = BoostMaxDutyVinput (vin_filtered);
@@ -134,9 +146,9 @@ void BoostLoop (void)
             }
             else
             {
-                voltage_pid.kp = 1;
-                voltage_pid.ki = 5;
-                voltage_pid.kd = 300;
+                voltage_pid.kp = 50;
+                voltage_pid.ki = 1;
+                voltage_pid.kd = 100;
                 voltage_pid.last_d = duty;
                 
                 boost_state++;
@@ -177,6 +189,13 @@ void BoostLoop (void)
             break;
 
         case boost_soft_overcurrent:
+            if (!boost_timeout)
+            {
+                boost_state = boost_init;
+            }
+            break;
+
+        case boost_soft_overvoltage:
             if (!boost_timeout)
             {
                 boost_state = boost_init;
@@ -274,28 +293,6 @@ unsigned short BoostMaxDutyVinput (unsigned short vin)
 }
 
 
-unsigned short UpdateDmaxLout (unsigned short delta_voltage)
-{
-    unsigned int num, den;
-
-    if (delta_voltage > 0)
-    {
-        // num = I_FOR_CALC * LOUT_UHY * 1000;    //cambio para no tener decimales en el preprocesador
-        num =  (ILOUT * 1000) * LOUT_UHY;
-        // num = I_FOR_CALC_MILLIS * LOUT_UHY;    
-        den = delta_voltage * TICK_PWM_NS;
-        num = num / den;
-
-        if (num > DMAX_HARDWARE)
-            num = DMAX_HARDWARE;
-    }
-    else
-        num = DMAX_HARDWARE;
-
-    return (unsigned short) num;
-}
-
-
 // vin volts divider = 2255 @ 20V = 0.00887
 // vin reflected divider = 22 * 0.00887 = 0.195
 // vout volts divider = 3000 pts @ 350V = 0.1166
@@ -326,4 +323,6 @@ unsigned short BoostMaxDutyLout (unsigned short vin, unsigned short vout)
         return (unsigned short) duty;
     
 }
+
+
 //--- end of file ---//

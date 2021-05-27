@@ -14,6 +14,7 @@
 #include "hard.h"
 #include "tim.h"
 #include "uart.h"
+#include "gpio.h"
 
 #include "adc.h"
 #include "dma.h"
@@ -93,21 +94,6 @@ void TF_Usart1_Tx (void)
 }
 
 
-// void TF_Usart1_Tx_Single (void)
-// {
-//     Usart1Config();
-
-//     while (1)
-//     {
-//         LED_ON;
-//         Usart1SendSingle('M');
-//         Wait_ms(50);
-//         LED_OFF;
-//         Wait_ms(1000);
-//     }
-// }
-
-
 void TF_Tim_Channels (void)
 {
     TIM_1_Init ();    // mosfet Ctrol_M_B
@@ -138,6 +124,8 @@ void TF_Prot_Mosfet (void)
 
 void TF_Prot_Mosfet_Int (void)
 {
+    EXTIOn();
+    
     while (1)
     {
         if (hard_overcurrent)
@@ -155,6 +143,10 @@ void TF_Prot_Mosfet_Int (void)
 
 void TF_Usart1_Adc_Dma (void)
 {
+    //-- TIM1 Init synchro ADC
+    TIM_1_Init();
+
+    //-- Usart Init
     Usart1Config();
 
     //-- ADC Init

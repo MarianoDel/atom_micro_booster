@@ -56,7 +56,6 @@ void GPIO_Config (void)
     //10: Pull-down
     //11: Reserved
 
-#if (defined VER_2_0)
     //--- GPIO A ---//
     if (!GPIOA_CLK)
         GPIOA_CLK_ON;
@@ -141,7 +140,7 @@ void GPIO_Config (void)
 
 #endif
 
-#ifdef WITH_OVERCURRENT_SHUTDOWN
+#ifdef WITH_OVERCURRENT_SHUTDOWN_PA4_PA5
     //Interrupt en PA4 y PA5
     if (!SYSCFG_CLK)
         SYSCFG_CLK_ON;
@@ -155,7 +154,9 @@ void GPIO_Config (void)
     NVIC_EnableIRQ(EXTI4_15_IRQn);
     NVIC_SetPriority(EXTI4_15_IRQn, 2);
     
-#else
+#endif
+
+#ifdef WITH_OVERCURRENT_SHUTDOWN_PA4
     //Interrupt en PA4
     if (!SYSCFG_CLK)
         SYSCFG_CLK_ON;
@@ -163,19 +164,16 @@ void GPIO_Config (void)
     SYSCFG->EXTICR[1] = 0x00000000; //Select Port A & Pin4 external interrupt
     // EXTI->IMR |= 0x00000010; 			//Corresponding mask bit for interrupts EXTI4
     EXTI->EMR |= 0x00000000; 			//Corresponding mask bit for events
-    EXTI->RTSR |= 0x00000000; 			//Interrupt line on rising edge
-    EXTI->FTSR |= 0x00000010; 			//Interrupt line on falling edge
+    EXTI->RTSR |= 0x00000010; 			//Interrupt line on rising edge
+    EXTI->FTSR |= 0x00000000; 			//Interrupt line on falling edge
 
     NVIC_EnableIRQ(EXTI4_15_IRQn);
     NVIC_SetPriority(EXTI4_15_IRQn, 2);    
 #endif    
-
-#endif    //end of ver_2_0
 }
 
 
-#if (defined VER_2_0)
-#ifdef WITH_OVERCURRENT_SHUTDOWN
+#ifdef WITH_OVERCURRENT_SHUTDOWN_PA4_PA5
 inline void EXTIOff (void)
 {
     EXTI->IMR &= ~0x00000030;
@@ -185,7 +183,9 @@ inline void EXTIOn (void)
 {
     EXTI->IMR |= 0x00000030;
 }
-#else
+#endif
+
+#ifdef WITH_OVERCURRENT_SHUTDOWN_PA4
 inline void EXTIOff (void)
 {
     EXTI->IMR &= ~0x00000010;
@@ -196,6 +196,5 @@ inline void EXTIOn (void)
     EXTI->IMR |= 0x00000010;
 }
 #endif
-#endif    //end of ver 2.0
 
 //--- end of file ---//

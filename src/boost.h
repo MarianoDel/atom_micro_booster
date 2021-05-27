@@ -18,6 +18,7 @@
 #define VOUT_SENSE_SOFT_START_THRESHOLD    2800
 
 #define I_SENSE_MAX_THRESHOLD    2000
+#define VOUT_SENSE_MAX_THRESHOLD    3500
 
 
 // Exported Functions ----------------------------------------------------------

@@ -14,8 +14,8 @@
 
 //----------- Defines For Configuration -------------
 //----------- Hardware Board Version -------------
-// #define VER_1_2    //placa combinada con inverter voltage cntrl + overcurrent
-#define VER_2_0    //usa control por tension mas proteccion de corriente pico
+#define VER_1_2    //placa combinada con inverter voltage cntrl + overcurrent
+// #define VER_2_0    //usa control por tension mas proteccion de corriente pico
 
 
 #define VOUT_SETPOINT    VOUT_200V
@@ -62,6 +62,7 @@
 #define USE_LED_IN_PROT
 
 //-- Other configs features ----------
+#define WITH_OVERCURRENT_SHUTDOWN_PA4
 
 //-- Frequency selection ----------
 // #define USE_FREQ_75KHZ
@@ -201,7 +202,7 @@
 //GPIOA pin3	NC
 
 //GPIOA pin4	
-#define PROT_MOS	((GPIOA->IDR & 0x0010) == 0)
+#define PROT_MOS	((GPIOA->IDR & 0x0010) != 0)
 
 //GPIOA pin5    NC
 

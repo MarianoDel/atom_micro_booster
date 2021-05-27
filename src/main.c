@@ -119,15 +119,14 @@ int main(void)
         SysTickError();
     
     //--- Hardware Tests Functions ---
-    TF_Led ();
-    TF_Led_Jumper ();
-    TF_Usart1_Tx ();
+    // TF_Led ();
+    // TF_Led_Jumper ();
     // TF_Led_Blinking();
-    TF_Tim_Channels ();
-    TF_Prot_Mosfet ();
-    TF_Prot_Mosfet_Int ();
-    
-    TF_Usart1_Adc_Dma ();
+    // TF_Usart1_Tx ();
+    // TF_Tim_Channels ();
+    // TF_Prot_Mosfet ();
+    // TF_Prot_Mosfet_Int ();    
+    TF_Usart1_Adc_Dma ();    
     //--- End of Hardware Tests Functions ---    
     
     //--- Welcome code ---//
@@ -141,8 +140,8 @@ int main(void)
 
     // Enable the Hard needed
     // TIM Config
-    TIM_1_Init ();    // mosfet Ctrol_M_B
-    TIM_3_Init ();    // mosfet Ctrol_M_A & synchro ADC
+    TIM_1_Init ();    // mosfet Ctrol_M_B & synchro TIM3 & synchro ADC
+    TIM_3_Init ();    // mosfet Ctrol_M_A
 
     EnablePreload_MosfetA;
     EnablePreload_MosfetB;

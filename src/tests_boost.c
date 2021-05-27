@@ -65,6 +65,7 @@ unsigned char HARD_StopJumper (void);
 unsigned char HARD_MosfetProtection (void);
 void ChangeLed (unsigned char led);
 void TIM_DisableMosfets (void);
+void TIM_UpdateMosfetsSync (unsigned short new_pwm);
 
 
 // Module Functions ------------------------------------------------------------
@@ -440,13 +441,14 @@ unsigned char HARD_MosfetProtection(void)
 }
 
 
-char led_strings [7][30] = { {"LED_NO_BLINKING"},
+char led_strings [8][30] = { {"LED_NO_BLINKING"},
                              {"BOOST_LED_INIT"},
                              {"BOOST_LED_SOFT_START"},
                              {"BOOST_LED_FULL_LOAD"},
                              {"BOOST_LED_JUMPER_PROT"},
                              {"BOOST_LED_HARD_OVERCURRENT"},
-                             {"BOOST_LED_SOFT_OVERCURRENT"} };
+                             {"BOOST_LED_SOFT_OVERCURRENT"},
+                             {"BOOST_LED_SOFT_OVERVOLTAGE"} };
 
 void ChangeLed (unsigned char led)
 {
@@ -461,6 +463,12 @@ void TIM_DisableMosfets (void)
 }
 
 
+void TIM_UpdateMosfetsSync (unsigned short new_pwm)
+{
+    printf("New Mosfets duty: %d\n", new_pwm);
+}
+
+                             
 //--- end of file ---//
 
 

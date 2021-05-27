@@ -153,7 +153,7 @@ void TIM_1_Init (void)
     //TIM1->SMCR |= TIM_SMCR_MSM | TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_TS_1;    //link timer3
     TIM1->SMCR = 0x0000;
 
-#if (defined VER_2_0)
+#if (defined VER_2_0) || (defined VER_1_2)
 #ifdef WITH_TIM1_FB
     TIM1->CCMR1 = 0x0060;            //CH1 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
     TIM1->CCMR2 = 0x0060;            //CH3 output PWM mode 1
@@ -173,7 +173,7 @@ void TIM_1_Init (void)
     TIM1->CNT = 0;
     TIM1->PSC = 0;
 
-#if (defined VER_2_0)
+#if (defined VER_2_0) || (defined VER_1_2)
 #ifdef WITH_TIM1_FB
     temp = GPIOB->AFR[0];
     temp &= 0xFFFFFF0F;
