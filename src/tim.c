@@ -446,7 +446,8 @@ void TIM_DisableMosfets (void)
     DisablePreload_MosfetA;
     DisablePreload_MosfetB;
 
-    UpdateTIMSync (DUTY_NONE);
+    TIM1->CCR1 = 0;
+    TIM3->ARR = DUTY_50_PERCENT + 0;
 
     EnablePreload_MosfetA;
     EnablePreload_MosfetB;
@@ -456,7 +457,18 @@ void TIM_DisableMosfets (void)
 void TIM_UpdateMosfetsSync (unsigned short new_pwm)
 {
     TIM1->CCR1 = new_pwm;
-    TIM3->CCR1 = new_pwm;
+    TIM3->ARR = DUTY_50_PERCENT + new_pwm;
+
+    // if (new_pwm)
+    // {
+    //     TIM1->CCR1 = new_pwm;
+    //     TIM3->ARR = DUTY_50_PERCENT + new_pwm + 1;
+    // }
+    // else
+    // {
+    //     TIM1->CCR1 = 0;
+    //     TIM3->ARR = DUTY_50_PERCENT;
+    // }
 }
 
 

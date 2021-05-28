@@ -82,3 +82,27 @@
 ** Agrego simulaciones python
    - booster_analog_digi.py
 
+* Simulaciones C - 26.05.2021
+** Con el resultado del script python
+* Ensayos - 27.05.2021
+** Se quemaron los mosfets
+   - el timer3 estaba mal sincronizado con timer1
+   - error:
+     TIM1->CCR1 = (X);
+     TIM3->CCR1 = (X);
+
+   - debia ser:
+     TIM1->CCR1 = (X);
+     TIM3->ARR = DUTY_50_PERCENT + (X);
+
+** Pruebas tension de salida
+   - setpoint 1250 --> 211V
+     | vout   | horario |
+     |--------+---------|
+     | 210V   | 14:35hs |
+     | 218.1V | 15:35hs | 
+
+  
+
+
+     

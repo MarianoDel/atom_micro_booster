@@ -46,7 +46,6 @@ volatile unsigned char seq_ready = 0;
 volatile unsigned short timer_led = 0;
 
 // -- Externals from filters
-volatile unsigned short take_temp_sample = 0;
 volatile unsigned char hard_overcurrent = 0;
 
 // ------- Definiciones para los filtros -------
@@ -126,7 +125,7 @@ int main(void)
     // TF_Tim_Channels ();
     // TF_Prot_Mosfet ();
     // TF_Prot_Mosfet_Int ();    
-    TF_Usart1_Adc_Dma ();    
+    // TF_Usart1_Adc_Dma ();    
     //--- End of Hardware Tests Functions ---    
     
     //--- Welcome code ---//
@@ -143,11 +142,8 @@ int main(void)
     TIM_1_Init ();    // mosfet Ctrol_M_B & synchro TIM3 & synchro ADC
     TIM_3_Init ();    // mosfet Ctrol_M_A
 
-    EnablePreload_MosfetA;
-    EnablePreload_MosfetB;
-
-    UpdateTIMSync (DUTY_NONE);
-
+    TIM_DisableMosfets();
+    
     // ADC & DMA Config
     AdcConfig();
     DMAConfig();
@@ -161,6 +157,8 @@ int main(void)
     {
         BoostLoop();
         UpdateLed();
+
+        // BoostLoopTestMosfet();        
     }
     
 //---------- End of Version 1_2  --------//
@@ -715,33 +713,16 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
-    if (take_temp_sample)
-        take_temp_sample--;
-
     if (timer_meas)
         timer_meas--;
 
     if (timer_led)
         timer_led--;
-
+    
     if (timer_filters)
         timer_filters--;
     
-    // //cuenta de a 1 minuto
-    // if (secs > 59999)	//pasaron 1 min
-    // {
-    // 	minutes++;
-    // 	secs = 0;
-    // }
-    // else
-    // 	secs++;
-    //
-    // if (minutes > 60)
-    // {
-    // 	hours++;
-    // 	minutes = 0;
-    // }
-
+    BoostTimeouts();
 
 }
 

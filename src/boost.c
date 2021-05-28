@@ -29,7 +29,8 @@ typedef enum {
     boost_jumper_protected,
     boost_hard_overcurrent,
     boost_soft_overcurrent,
-    boost_soft_overvoltage
+    boost_soft_overvoltage,
+    boost_input_over_undervoltage
     
 } boost_state_e;
 
@@ -41,6 +42,7 @@ typedef enum {
 #define BOOST_LED_HARD_OVERCURRENT    5
 #define BOOST_LED_SOFT_OVERCURRENT    6
 #define BOOST_LED_SOFT_OVERVOLTAGE    7
+#define BOOST_LED_OVER_UNDERVOLTAGE    8
 
 
 // Externals -------------------------------------------------------------------
@@ -57,6 +59,8 @@ boost_state_e boost_state = boost_init;
 ma8_u16_data_obj_t vin_sense_filter;
 short duty = 0;
 unsigned char soft_start_cntr = 0;
+unsigned short seq_cntr = 0;
+
 
 pid_data_obj_t voltage_pid;
 
@@ -83,7 +87,7 @@ void BoostLoop (void)
             ChangeLed(BOOST_LED_SOFT_OVERCURRENT);
         }
 
-        // check for soft overvoltage
+        // check for soft overvoltage    TODO: not start from init next time
         if ((Vout_Sense > VOUT_SENSE_MAX_THRESHOLD) &&
             (boost_state != boost_soft_overvoltage))
         {
@@ -105,6 +109,23 @@ void BoostLoop (void)
         else
             dmax = dmax_lout;
 
+        
+        // check for overvoltage or undervoltage
+        if (boost_state != boost_input_over_undervoltage)
+        {
+            if (seq_cntr < 8)    // give the filter some time
+                seq_cntr++;
+            else if ((vin_filtered > VIN_SENSE_MAX_THRESHOLD) ||
+                     (vin_filtered < VIN_SENSE_MIN_THRESHOLD))
+
+            {
+                TIM_DisableMosfets();
+                boost_state = boost_input_over_undervoltage;
+                boost_timeout = 10000;
+                ChangeLed(BOOST_LED_OVER_UNDERVOLTAGE);
+            }
+        }
+        
         
         switch (boost_state)
         {
@@ -144,6 +165,12 @@ void BoostLoop (void)
                     }
                 }
             }
+            // else    //disconect for 60 secs after soft start
+            // {
+            //     TIM_UpdateMosfetsSync(DUTY_NONE);
+            //     boost_state = boost_jumper_protected;
+            //     boost_timeout = 60000;
+            // }
             else
             {
                 voltage_pid.kp = 50;
@@ -157,7 +184,7 @@ void BoostLoop (void)
             break;
 
         case boost_full_load:
-            voltage_pid.setpoint = OUTPUT_SETPOINT;
+            voltage_pid.setpoint = VOUT_SENSE_SETPOINT;
             voltage_pid.sample = Vout_Sense;
             // duty = PI(&voltage_pid);
             duty = PID(&voltage_pid);            
@@ -195,7 +222,14 @@ void BoostLoop (void)
             }
             break;
 
-        case boost_soft_overvoltage:
+        case boost_soft_overvoltage:    //TODO: change this go to full load
+            if (!boost_timeout)
+            {
+                boost_state = boost_init;
+            }
+            break;
+
+        case boost_input_over_undervoltage:
             if (!boost_timeout)
             {
                 boost_state = boost_init;
@@ -250,6 +284,33 @@ void BoostLoop (void)
     }
 }
 
+
+// unsigned char tims_on = 0;
+// void BoostLoopTestMosfet (void)
+// {
+//     if (DMASequenceReady())
+//     {
+//         DMASequenceReadyReset();
+//         seq_cntr += 1;
+
+//         if (seq_cntr > 48000)
+//         {
+//             seq_cntr = 0;
+//             if (tims_on)
+//             {
+//                 LED_OFF;
+//                 TIM_UpdateMosfetsSync(0);
+//                 tims_on = 0;
+//             }
+//             else
+//             {
+//                 LED_ON;
+//                 TIM_UpdateMosfetsSync(DUTY_10_PERCENT);
+//                 tims_on = 1;
+//             }
+//         }
+//     }
+// }
 
 void BoostFiltersInit (void)
 {

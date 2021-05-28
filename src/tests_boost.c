@@ -27,6 +27,8 @@
 #define BOOST_LED_JUMPER_PROT    4
 #define BOOST_LED_HARD_OVERCURRENT    5
 #define BOOST_LED_SOFT_OVERCURRENT    6
+#define BOOST_LED_SOFT_OVERVOLTAGE    7
+#define BOOST_LED_OVER_UNDERVOLTAGE    8
 
 
 // Externals -------------------------------------------------------------------
@@ -185,7 +187,80 @@ void TEST_Boost_Loop (void)
         PrintERR();
         printf("boost_state expected 0, getted %d\n", boost_state);
     }
+
+    // check low Vin_Sense
+    dma_sequence = 1;
+    hard_prot_mosfet = 0;
+    hard_stop_jumper = 0;
+    adc_ch[0] = VIN_SENSE_MIN_THRESHOLD;
+    for (int i = 0; i < 10; i++)
+    {
+        dma_sequence = 1;
+        BoostLoop();
+    }
     
+    printf("boost loop undervoltage: ");
+    if ((boost_state == 8) &&
+        (!dma_sequence) &&
+        (hard_led_state == BOOST_LED_OVER_UNDERVOLTAGE))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("boost_state expected 8, getted %d\n", boost_state);
+    }
+    
+    dma_sequence = 1;
+    hard_prot_mosfet = 0;
+    hard_stop_jumper = 0;
+    boost_timeout = 0;
+    BoostLoop();
+    printf("boost loop undervoltage ended: ");    
+    if ((boost_state == 0) && (!dma_sequence))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("boost_state expected 0, getted %d\n", boost_state);
+    }
+
+    // check high Vin_Sense
+    dma_sequence = 1;
+    hard_prot_mosfet = 0;
+    hard_stop_jumper = 0;
+    adc_ch[0] = VIN_SENSE_MAX_THRESHOLD;
+    for (int i = 0; i < 10; i++)
+    {
+        dma_sequence = 1;
+        BoostLoop();
+    }
+    
+    printf("boost loop overvoltage: ");
+    if ((boost_state == 8) &&
+        (!dma_sequence) &&
+        (hard_led_state == BOOST_LED_OVER_UNDERVOLTAGE))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("boost_state expected 8, getted %d\n", boost_state);
+    }
+    
+    dma_sequence = 1;
+    hard_prot_mosfet = 0;
+    hard_stop_jumper = 0;
+    boost_timeout = 0;
+    BoostLoop();
+    printf("boost loop overvoltage ended: ");    
+    if ((boost_state == 0) && (!dma_sequence))
+        PrintOK();
+    else
+    {
+        PrintERR();
+        printf("boost_state expected 0, getted %d\n", boost_state);
+    }
+    
+    printf("\n");
 }
 
 
@@ -441,14 +516,15 @@ unsigned char HARD_MosfetProtection(void)
 }
 
 
-char led_strings [8][30] = { {"LED_NO_BLINKING"},
+char led_strings [9][30] = { {"LED_NO_BLINKING"},
                              {"BOOST_LED_INIT"},
                              {"BOOST_LED_SOFT_START"},
                              {"BOOST_LED_FULL_LOAD"},
                              {"BOOST_LED_JUMPER_PROT"},
                              {"BOOST_LED_HARD_OVERCURRENT"},
                              {"BOOST_LED_SOFT_OVERCURRENT"},
-                             {"BOOST_LED_SOFT_OVERVOLTAGE"} };
+                             {"BOOST_LED_SOFT_OVERVOLTAGE"},
+                             {"BOOST_LED_OVER_UNDERVOLTAGE"} };                             
 
 void ChangeLed (unsigned char led)
 {

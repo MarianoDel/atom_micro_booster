@@ -109,13 +109,13 @@ void TestBoostCloseLoop (void)
 
     printf("init voltage input from panels\n");
     for (int i = 0; i < VECTOR_LENGTH; i++)
-        vinput[i] = 20.0;
+        vinput[i] = 30.0;
 
     printf("init reference vector\n");
     for (int i = 0; i < VECTOR_LENGTH; i++)
     {
-        reference[i] = OUTPUT_SETPOINT;
-        reference_voltage[i] = OUTPUT_SETPOINT * 3.3 / (4095 * K_VOLTS_OUTPUT);
+        reference[i] = VOUT_SENSE_SETPOINT;
+        reference_voltage[i] = VOUT_SENSE_SETPOINT * 3.3 / (4095 * K_VOLTS_OUTPUT);
     }
     
     printf("execute boost loop\n");
@@ -371,14 +371,15 @@ unsigned char HARD_MosfetProtection(void)
 }
 
 
-char led_strings [8][30] = { {"LED_NO_BLINKING"},
+char led_strings [9][30] = { {"LED_NO_BLINKING"},
                              {"BOOST_LED_INIT"},
                              {"BOOST_LED_SOFT_START"},
                              {"BOOST_LED_FULL_LOAD"},
                              {"BOOST_LED_JUMPER_PROT"},
                              {"BOOST_LED_HARD_OVERCURRENT"},
                              {"BOOST_LED_SOFT_OVERCURRENT"},
-                             {"BOOST_LED_SOFT_OVERVOLTAGE"} };
+                             {"BOOST_LED_SOFT_OVERVOLTAGE"},
+                             {"BOOST_LED_OVER_UNDERVOLTAGE"} };
 
 void ChangeLed (unsigned char led)
 {
