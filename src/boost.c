@@ -111,20 +111,20 @@ void BoostLoop (void)
 
         
         // check for overvoltage or undervoltage
-        if (boost_state != boost_input_over_undervoltage)
-        {
-            if (seq_cntr < 8)    // give the filter some time
-                seq_cntr++;
-            else if ((vin_filtered > VIN_SENSE_MAX_THRESHOLD) ||
-                     (vin_filtered < VIN_SENSE_MIN_THRESHOLD))
+        // if (boost_state != boost_input_over_undervoltage)
+        // {
+        //     if (seq_cntr < 8)    // give the filter some time
+        //         seq_cntr++;
+        //     else if ((vin_filtered > VIN_SENSE_MAX_THRESHOLD) ||
+        //              (vin_filtered < VIN_SENSE_MIN_THRESHOLD))
 
-            {
-                TIM_DisableMosfets();
-                boost_state = boost_input_over_undervoltage;
-                boost_timeout = 10000;
-                ChangeLed(BOOST_LED_OVER_UNDERVOLTAGE);
-            }
-        }
+        //     {
+        //         TIM_DisableMosfets();
+        //         boost_state = boost_input_over_undervoltage;
+        //         boost_timeout = 10000;
+        //         ChangeLed(BOOST_LED_OVER_UNDERVOLTAGE);
+        //     }
+        // }
         
         
         switch (boost_state)
@@ -239,8 +239,10 @@ void BoostLoop (void)
         default:
             boost_state = boost_init;
             break;
-        }
-    }
+            
+        }    // end of switch
+        
+    }    // end of dma sequence ready
 
     //continuous checks
     if ((HARD_StopJumper()) && (boost_state != boost_jumper_protected))
@@ -248,17 +250,6 @@ void BoostLoop (void)
         TIM_DisableMosfets();
         boost_state = boost_jumper_protected;
         boost_timeout = 10000;
-        
-        // DisablePreload_MosfetA;
-        // DisablePreload_MosfetB;
-
-        // UpdateTIMSync (DUTY_NONE);
-        // boost_state = boost_jumper_protected;
-        // boost_timeout = 10000;
-
-        // EnablePreload_MosfetA;
-        // EnablePreload_MosfetB;
-
         ChangeLed(BOOST_LED_JUMPER_PROT);
     }
 
@@ -267,20 +258,9 @@ void BoostLoop (void)
         TIM_DisableMosfets();
         boost_state = boost_hard_overcurrent;
         boost_timeout = 10000;
-        // DisablePreload_MosfetA;
-        // DisablePreload_MosfetB;
-
-        // UpdateTIMSync (DUTY_NONE);
-        // boost_state = boost_hard_overcurrent;
-        // boost_timeout = 10000;
-
-        // EnablePreload_MosfetA;
-        // EnablePreload_MosfetB;
-
         hard_overcurrent = 0;
         EXTIOff();
         ChangeLed(BOOST_LED_HARD_OVERCURRENT);        
-        
     }
 }
 

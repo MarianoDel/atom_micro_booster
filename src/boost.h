@@ -30,9 +30,15 @@
 // #define VOUT_SENSE_SETPOINT    1250
 // #define VOUT_SENSE_MAX_THRESHOLD    1500
 
-#define VOUT_SENSE_SOFT_START_THRESHOLD    1628    //(setpoint * 0.88)
-#define VOUT_SENSE_SETPOINT    1850
-#define VOUT_SENSE_MAX_THRESHOLD    2200        //(setpoint * 1.2)
+// meas on 28-05-2021
+// 1850 pts 255V feedback
+// #define VOUT_SENSE_SOFT_START_THRESHOLD    1628    //(setpoint * 0.88)
+// #define VOUT_SENSE_SETPOINT    1850
+// #define VOUT_SENSE_MAX_THRESHOLD    2200        //(setpoint * 1.2)
+
+#define VOUT_SENSE_SOFT_START_THRESHOLD    2442    //(setpoint * 0.88)
+#define VOUT_SENSE_SETPOINT    2775
+#define VOUT_SENSE_MAX_THRESHOLD    3330        //(setpoint * 1.2)
 
 #define I_SENSE_MAX_THRESHOLD    2000
 
