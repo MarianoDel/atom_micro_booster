@@ -101,7 +101,7 @@ void BoostLoop (void)
         unsigned short vin_filtered = MA8_U16Circular(&vin_sense_filter, Vin_Sense);
         unsigned short dmax_vin = BoostMaxDutyVinput (vin_filtered);
         unsigned short dmax_lout = BoostMaxDutyLout (vin_filtered, Vout_Sense);
-        // unsigned short dmax_lout = DUTY_45_PERCENT;        
+        // unsigned short dmax_lout = DUTY_FOR_DMAX;
         unsigned short dmax = 0;
 
         if (dmax_vin <= dmax_lout)
@@ -194,7 +194,10 @@ void BoostLoop (void)
                 duty = 0;
 
             if (duty > dmax)
+            {
                 duty = dmax;
+                voltage_pid.last_d = duty;
+            }
 
             TIM_UpdateMosfetsSync(duty);
             break;
@@ -353,13 +356,13 @@ unsigned short BoostMaxDutyLout (unsigned short vin, unsigned short vout)
     vout_scaled = vout_scaled / 1000;
 
     if (vin_reflected <= vout_scaled)    //equals protect div by 0!
-        return DMAX_HARDWARE;
+        return DUTY_FOR_DMAX;
 
     unsigned short delta_v = vin_reflected - vout_scaled;
     unsigned int duty = 116208 / delta_v;
 
-    if (duty > DMAX_HARDWARE)
-        return DMAX_HARDWARE;
+    if (duty > DUTY_FOR_DMAX)
+        return DUTY_FOR_DMAX;
     else
         return (unsigned short) duty;
     

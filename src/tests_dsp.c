@@ -30,6 +30,7 @@
 
 // Module Functions to Test ----------------------------------------------------
 void TEST_Dsp_Module (void);
+void TEST_Pid_DMAX (void);
 
 
 // Module Functions ------------------------------------------------------------
@@ -37,6 +38,8 @@ int main (int argc, char *argv[])
 {
     printf("Simple dsp module tests\n");
     TEST_Dsp_Module();
+    printf("\n");
+    TEST_Pid_DMAX ();
     
     return 0;
 }
@@ -174,6 +177,46 @@ void TEST_Dsp_Module (void)
 
     if (!errors)
         PrintOK();
+    
+}
+
+
+void TEST_Pid_DMAX (void)
+{
+    printf("Testing PID with dmax\n");
+    int errors = 0;
+    
+    pid_data_obj_t pid1;
+
+    pid1.kp = 50;
+    pid1.ki = 1;
+    pid1.kd = 100;
+    PID_Flush_Errors(&pid1);
+
+    short d = 0;
+    unsigned short dmax = 400;
+    pid1.setpoint = 2700;
+
+
+    for (int i = 0; i < 500; i++)
+    {
+        pid1.sample = 2500;
+
+        d = PID(&pid1);
+        printf("d: %d ", d);
+
+        if (d < 0)
+            d = 0;
+
+        if (d > dmax)
+        {
+            d = dmax;
+            pid1.last_d = dmax;
+        }
+
+        printf("windowed d: %d\n", d);
+    }
+
     
 }
 
